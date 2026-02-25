@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PETUGAS
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      Role     @default(PETUGAS)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  jadwals   Jadwal[]
+}
+
+enum AssetType {
+  AC
+  APAR
+  HYDRANT
+}
+
+model Asset {
+  id        String   @id @default(uuid())
+  name      String
+  type      AssetType
+  location  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jadwals   Jadwal[]
+}
+
+model Jadwal {
+  id          String   @id @default(uuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id])
+  petugasId   String
+  petugas     User     @relation(fields: [petugasId], references: [id])
+  plannedDate DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  transaksi   Transaksi?
+}
+
+enum StatusPelaksanaan {
+  TEPAT_WAKTU
+  TERLAMBAT
+}
+
+model Transaksi {
+  id              String   @id @default(uuid())
+  jadwalId        String   @unique
+  jadwal          Jadwal   @relation(fields: [jadwalId], references: [id])
+  actualDate      DateTime
+  hasilFisik      String   @db.Text
+  status          StatusPelaksanaan
+  createdAt       DateTime @default(now())
+}
