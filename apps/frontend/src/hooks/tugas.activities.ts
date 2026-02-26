@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ActivityChecklist, ActivityLog, Item, User } from '@repo/resource'
+import { authenticatedFetch } from '../lib/api-client'
 
 export type ActivityLogWithRelations = ActivityLog & {
   user?: Pick<User, 'id' | 'name'>
@@ -14,13 +15,10 @@ export type CreateActivityPayload = {
   photo?: string
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api'
-
 export const ACTIVITIES_QUERY_KEY = ['tugas-activities'] as const
 
 const fetchActivities = async (): Promise<ActivityLogWithRelations[]> => {
-  const response = await fetch(`${API_BASE_URL}/activities`)
+  const response = await authenticatedFetch('/activities')
 
   if (!response.ok) {
     throw new Error('Gagal mengambil data aktivitas')
@@ -32,7 +30,7 @@ const fetchActivities = async (): Promise<ActivityLogWithRelations[]> => {
 const createActivity = async (
   payload: CreateActivityPayload,
 ): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/activities`, {
+  const response = await authenticatedFetch('/activities', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

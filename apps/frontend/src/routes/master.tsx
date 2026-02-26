@@ -1,17 +1,17 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 import {
   useMasterItemsQuery,
   useMasterCategoriesQuery,
   useCreateItemMutation,
 } from '../hooks/master.items'
+import ProtectedRoute from '../components/ProtectedRoute'
 
 export const Route = createFileRoute('/master')({
   component: RouteComponent,
 })
 
-function RouteComponent() {
-  const navigate = useNavigate()
+export default function RouteComponent() {
   const [form, setForm] = useState({
     name: '',
     code: '',
@@ -20,19 +20,9 @@ function RouteComponent() {
     spec: '',
   })
 
-  // Use hooks instead of dummy data
   const { data: items = [], isLoading: isLoadingItems } = useMasterItemsQuery()
   const { data: categories = [], isLoading: isLoadingCategories } = useMasterCategoriesQuery()
   const createItemMutation = useCreateItemMutation()
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const r = localStorage.getItem('dummy_role')
-      if (r !== 'ADMIN') {
-        navigate({ to: '/' })
-      }
-    }
-  }, [navigate])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -63,7 +53,8 @@ function RouteComponent() {
   const isSubmitting = createItemMutation.isPending
 
   return (
-    <div className="p-6 space-y-6">
+    <ProtectedRoute requiredRole="ADMIN">
+      <div className="p-6 space-y-6">
       <section className="border shadow-md bg-white p-4">
         <h1 className="text-lg font-semibold border-b pb-2 mb-4">
           Kelola Master Item
@@ -240,5 +231,6 @@ function RouteComponent() {
         )}
       </section>
     </div>
+    </ProtectedRoute>
   )
 }

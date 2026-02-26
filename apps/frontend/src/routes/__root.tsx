@@ -9,8 +9,8 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import Header from '../components/Header'
 
 import TanStackQueryProvider from '../integrations/tanstack-query/root-provider'
-import { useAuthStore } from '../store/authStore';
-import { useEffect } from 'react';
+import { useAuthStore } from '../store/authStore'
+import { useEffect } from 'react'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -47,12 +47,25 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 })
 
 function AuthInitializer() {
-  const refreshAuthToken = useAuthStore((state) => state.refreshAuthToken);
+  const initialize = useAuthStore((state) => state.initialize)
+  const isLoading = useAuthStore((state) => state.isLoading)
+
   useEffect(() => {
-    refreshAuthToken();
-  }, [refreshAuthToken]);
-  return null;
+    initialize()
+  }, [initialize])
+
+  // Don't render children until auth is initialized
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    )
+  }
+
+  return null
 }
+
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (

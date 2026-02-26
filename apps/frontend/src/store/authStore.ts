@@ -8,6 +8,8 @@ interface AuthStore {
   token: string | null
   refreshToken: string | null
   isAuthenticated: boolean
+  isLoading: boolean
+  initialize: () => Promise<void>
   login: (credentials: { username: string; password: string }) => Promise<void>
   signup: (data: {
     username: string
@@ -24,6 +26,42 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   token: null,
   refreshToken: null,
   isAuthenticated: false,
+  isLoading: true,
+
+  // Initialize auth state from storage on app load
+  initialize: async () => {
+    const storedToken = Cookies.get('auth_token')
+    const storedRefreshToken = localStorage.getItem('refresh_token')
+    
+    if (!storedToken || !storedRefreshToken) {
+      set({ isLoading: false })
+      return
+    }
+    
+    // We have tokens, try to refresh to get user info
+    try {
+      const response = await authAPI.refreshToken(storedRefreshToken)
+      set({
+        user: response.user,
+        token: response.token,
+        refreshToken: response.refreshToken,
+        isAuthenticated: true,
+        isLoading: false,
+      })
+      // Update stored token
+      Cookies.set('auth_token', response.token, {
+        secure: true,
+        sameSite: 'strict',
+        expires: 1 / 144,
+      })
+      localStorage.setItem('refresh_token', response.refreshToken)
+    } catch (error) {
+      // Token invalid or expired - clear storage
+      Cookies.remove('auth_token')
+      localStorage.removeItem('refresh_token')
+      set({ isLoading: false })
+    }
+  },
 
   login: async (credentials) => {
     const response = await authAPI.login(credentials)

@@ -33,6 +33,42 @@ const SignupSchema = z.object({
 });
 
 // API calls
+// Transform backend responses to match frontend's AuthResponse format
+
+function transformLoginResponse(data: {
+  token: string;
+  role: string;
+  userId: string;
+  name: string;
+  refreshToken: string;
+}): AuthResponse {
+  return {
+    token: data.token,
+    refreshToken: data.refreshToken,
+    user: {
+      id: data.userId,
+      username: '', // Backend doesn't return username on login - we'll get it from JWT if needed
+      name: data.name,
+      role: data.role as 'ADMIN' | 'USER',
+    },
+  };
+}
+
+function transformRefreshResponse(data: {
+  token: string;
+  refreshToken: string;
+  user: { id: string; username: string; name: string; role: string };
+}): AuthResponse {
+  return {
+    token: data.token,
+    refreshToken: data.refreshToken,
+    user: {
+      ...data.user,
+      role: data.user.role as 'ADMIN' | 'USER',
+    },
+  };
+}
+
 export const authAPI = {
   login: async (credentials: z.infer<typeof LoginSchema>): Promise<AuthResponse> => {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -40,8 +76,12 @@ export const authAPI = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
-    if (!res.ok) throw new Error('Invalid credentials');
-    return res.json();
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Invalid credentials' }));
+      throw new Error(error.error || 'Invalid credentials');
+    }
+    const data = await res.json();
+    return transformLoginResponse(data);
   },
 
   signup: async (data: z.infer<typeof SignupSchema>): Promise<AuthResponse> => {
@@ -50,8 +90,12 @@ export const authAPI = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Signup failed');
-    return res.json();
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Signup failed' }));
+      throw new Error(error.error || 'Signup failed');
+    }
+    const responseData = await res.json();
+    return transformLoginResponse(responseData);
   },
 
   refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
@@ -61,7 +105,8 @@ export const authAPI = {
       body: JSON.stringify({ refreshToken }),
     });
     if (!res.ok) throw new Error('Session expired');
-    return res.json();
+    const data = await res.json();
+    return transformRefreshResponse(data);
   },
 
   logout: async (refreshToken: string): Promise<void> => {

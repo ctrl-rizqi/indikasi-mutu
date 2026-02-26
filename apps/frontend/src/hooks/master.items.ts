@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Category, Item } from '@repo/resource'
+import { authenticatedFetch, API_BASE_URL } from '../lib/api-client'
 
 export type CategoryOption = Pick<Category, 'id' | 'name'>
 
@@ -16,14 +17,11 @@ export type CreateItemPayload = Pick<
   spec?: string
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api'
-
 export const ITEMS_QUERY_KEY = ['master-items'] as const
 export const CATEGORIES_QUERY_KEY = ['master-categories'] as const
 
 const fetchItems = async (): Promise<ItemRow[]> => {
-  const response = await fetch(`${API_BASE_URL}/items`)
+  const response = await authenticatedFetch('/items')
 
   if (!response.ok) {
     throw new Error('Gagal mengambil data item')
@@ -33,7 +31,7 @@ const fetchItems = async (): Promise<ItemRow[]> => {
 }
 
 const fetchCategories = async (): Promise<CategoryOption[]> => {
-  const response = await fetch(`${API_BASE_URL}/categories`)
+  const response = await authenticatedFetch('/categories')
 
   if (!response.ok) {
     throw new Error('Gagal mengambil data kategori')
@@ -43,7 +41,7 @@ const fetchCategories = async (): Promise<CategoryOption[]> => {
 }
 
 const createItem = async (payload: CreateItemPayload): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/items`, {
+  const response = await authenticatedFetch('/items', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -55,7 +53,6 @@ const createItem = async (payload: CreateItemPayload): Promise<void> => {
     throw new Error('Gagal menambah item')
   }
 }
-
 export const useMasterItemsQuery = () => {
   return useQuery({
     queryKey: ITEMS_QUERY_KEY,
