@@ -333,7 +333,7 @@ function App() {
                   Catatan Tambahan
                 </label>
                 <textarea
-                  className="w-full border border-slate-300 px-3 py-2 text-sm bg-white min-h-[100px]"
+                  className="w-full border border-slate-300 px-3 py-2 text-sm bg-white min-h-25"
                   placeholder="Deskripsi pekerjaan atau temuan..."
                   value={formInput.note}
                   onChange={(e) =>

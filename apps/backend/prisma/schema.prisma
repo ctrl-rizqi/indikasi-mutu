@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -22,18 +21,18 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relasi: User yang menginput aktivitas
-  activities ActivityLog[]
+  activities    ActivityLog[]
   refreshTokens RefreshToken[]
 }
 
 model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
+  id        String    @id @default(uuid())
+  token     String    @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model Category {
@@ -43,37 +42,37 @@ model Category {
 }
 
 model Item {
-  id          String   @id @default(uuid())
-  name        String   // Nama alat/aset
-  code        String   @unique // Kode unik alat (misal: AC-001)
-  location    String   // Lokasi alat
-  spec        String?  // Spesifikasi teknis (opsional)
-  status      String   @default("Active") // Active, Maintenance, Broken
-  
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  
-  activities  ActivityLog[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id       String  @id @default(uuid())
+  name     String // Nama alat/aset
+  code     String  @unique // Kode unik alat (misal: AC-001)
+  location String // Lokasi alat
+  spec     String? // Spesifikasi teknis (opsional)
+  status   String  @default("Active") // Active, Maintenance, Broken
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  activities ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ActivityLog {
-  id          String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Checklist Kondisi (Bisa disimpan sebagai JSON untuk fleksibilitas)
   // Contoh: { "kebersihan": true, "tekanan": "normal", "fungsi": true }
-  checklist   Json
-  
-  note        String?  // Catatan tambahan
-  photo       String?  // URL foto jika ada bukti aktivitas
-  
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  
-  itemId      String
-  item        Item     @relation(fields: [itemId], references: [id])
+  checklist Json
 
-  createdAt   DateTime @default(now())
+  note  String? // Catatan tambahan
+  photo String? // URL foto jika ada bukti aktivitas
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id])
+
+  createdAt DateTime @default(now())
 }

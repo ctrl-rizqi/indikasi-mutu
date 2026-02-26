@@ -16,7 +16,7 @@ export default function SignupPage() {
   const signup = useAuthStore((state) => state.signup)
   const navigate = useNavigate()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)

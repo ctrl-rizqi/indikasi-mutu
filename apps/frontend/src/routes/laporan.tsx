@@ -90,7 +90,7 @@ function RouteComponent() {
               </div>
             </div>
 
-            <div className="border border-slate-200 bg-slate-50 p-8 min-h-[300px] flex items-center justify-center">
+            <div className="border border-slate-200 bg-slate-50 p-8 min-h-75 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-48 h-48 rounded-full border-8 border-slate-200 border-r-blue-500 border-t-blue-500 border-l-blue-500 transform rotate-45 mx-auto mb-4 relative">
                   <div className="absolute inset-0 flex items-center justify-center -rotate-45">
