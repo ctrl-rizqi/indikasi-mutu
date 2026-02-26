@@ -9,61 +9,60 @@ datasource db {
 
 enum Role {
   ADMIN
-  PETUGAS
+  USER
 }
 
 model User {
   id        String   @id @default(uuid())
   username  String   @unique
   password  String
-  role      Role     @default(PETUGAS)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  jadwals   Jadwal[]
-}
-
-enum AssetType {
-  AC
-  APAR
-  HYDRANT
-}
-
-model Asset {
-  id        String   @id @default(uuid())
   name      String
-  type      AssetType
-  location  String
+  role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  jadwals   Jadwal[]
+  // Relasi: User yang menginput aktivitas
+  activities ActivityLog[]
 }
 
-model Jadwal {
+model Category {
+  id    String @id @default(uuid())
+  name  String @unique // Contoh: "AC", "APAR", "Listrik"
+  items Item[]
+}
+
+model Item {
   id          String   @id @default(uuid())
-  assetId     String
-  asset       Asset    @relation(fields: [assetId], references: [id])
-  petugasId   String
-  petugas     User     @relation(fields: [petugasId], references: [id])
-  plannedDate DateTime
+  name        String   // Nama alat/aset
+  code        String   @unique // Kode unik alat (misal: AC-001)
+  location    String   // Lokasi alat
+  spec        String?  // Spesifikasi teknis (opsional)
+  status      String   @default("Active") // Active, Maintenance, Broken
+  
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  
+  activities  ActivityLog[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  transaksi   Transaksi?
 }
 
-enum StatusPelaksanaan {
-  TEPAT_WAKTU
-  TERLAMBAT
-}
+model ActivityLog {
+  id          String   @id @default(uuid())
+  
+  // Checklist Kondisi (Bisa disimpan sebagai JSON untuk fleksibilitas)
+  // Contoh: { "kebersihan": true, "tekanan": "normal", "fungsi": true }
+  checklist   Json
+  
+  note        String?  // Catatan tambahan
+  photo       String?  // URL foto jika ada bukti aktivitas
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  itemId      String
+  item        Item     @relation(fields: [itemId], references: [id])
 
-model Transaksi {
-  id              String   @id @default(uuid())
-  jadwalId        String   @unique
-  jadwal          Jadwal   @relation(fields: [jadwalId], references: [id])
-  actualDate      DateTime
-  hasilFisik      String   @db.Text
-  status          StatusPelaksanaan
-  createdAt       DateTime @default(now())
+  createdAt   DateTime @default(now())
 }

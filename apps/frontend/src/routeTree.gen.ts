@@ -9,17 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TugasRouteImport } from './routes/tugas'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LaporanRouteImport } from './routes/laporan'
 import { Route as IndexRouteImport } from './routes/index'
 
-const TugasRoute = TugasRouteImport.update({
-  id: '/tugas',
-  path: '/tugas',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MasterRoute = MasterRouteImport.update({
   id: '/master',
   path: '/master',
@@ -46,14 +40,12 @@ export interface FileRoutesByFullPath {
   '/laporan': typeof LaporanRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRoute
-  '/tugas': typeof TugasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/laporan': typeof LaporanRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRoute
-  '/tugas': typeof TugasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,14 +53,13 @@ export interface FileRoutesById {
   '/laporan': typeof LaporanRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRoute
-  '/tugas': typeof TugasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/laporan' | '/login' | '/master' | '/tugas'
+  fullPaths: '/' | '/laporan' | '/login' | '/master'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/laporan' | '/login' | '/master' | '/tugas'
-  id: '__root__' | '/' | '/laporan' | '/login' | '/master' | '/tugas'
+  to: '/' | '/laporan' | '/login' | '/master'
+  id: '__root__' | '/' | '/laporan' | '/login' | '/master'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,18 +67,10 @@ export interface RootRouteChildren {
   LaporanRoute: typeof LaporanRoute
   LoginRoute: typeof LoginRoute
   MasterRoute: typeof MasterRoute
-  TugasRoute: typeof TugasRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tugas': {
-      id: '/tugas'
-      path: '/tugas'
-      fullPath: '/tugas'
-      preLoaderRoute: typeof TugasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/master': {
       id: '/master'
       path: '/master'
@@ -124,7 +107,6 @@ const rootRouteChildren: RootRouteChildren = {
   LaporanRoute: LaporanRoute,
   LoginRoute: LoginRoute,
   MasterRoute: MasterRoute,
-  TugasRoute: TugasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,63 +1,45 @@
-export const ROLE = {
-  ADMIN: 'ADMIN',
-  PETUGAS: 'PETUGAS'
-} as const
-
-export type Role = (typeof ROLE)[keyof typeof ROLE]
-
-export const ASSET_TYPE = {
-  AC: 'AC',
-  APAR: 'APAR',
-  HYDRANT: 'HYDRANT'
-} as const
-
-export type AssetType = (typeof ASSET_TYPE)[keyof typeof ASSET_TYPE]
-
-export const STATUS_PELAKSANAAN = {
-  TEPAT_WAKTU: 'TEPAT_WAKTU',
-  TERLAMBAT: 'TERLAMBAT'
-} as const
-
-export type StatusPelaksanaan = (typeof STATUS_PELAKSANAAN)[keyof typeof STATUS_PELAKSANAAN]
+export type Role = 'ADMIN' | 'USER'
 
 export interface User {
   id: string
-  username: string
   password: string
+  name: string
   role: Role
   createdAt: Date
   updatedAt: Date
-  jadwals?: Jadwal[]
+  activities?: ActivityLog[]
 }
 
-export interface Asset {
+export interface Category {
   id: string
   name: string
-  type: AssetType
+  items?: Item[]
+}
+
+export interface Item {
+  id: string
+  name: string
+  code: string
   location: string
+  spec?: string
+  status: string
+  categoryId: string
+  category?: Category
+  activities?: ActivityLog[]
   createdAt: Date
   updatedAt: Date
-  jadwals?: Jadwal[]
 }
 
-export interface Jadwal {
-  id: string
-  assetId: string
-  asset?: Asset
-  petugasId: string
-  petugas?: User
-  plannedDate: Date
-  createdAt: Date
-  updatedAt: Date
-  transaksi?: Transaksi | null
-}
+export type ActivityChecklist = Record<string, string | number | boolean | null>
 
-export interface Transaksi {
+export interface ActivityLog {
   id: string
-  jadwalId: string
-  jadwal?: Jadwal
-  actualDate: Date
-  hasilFisik: string
-  status: StatusPelaksanaan
+  checklist: ActivityChecklist
+  note?: string
+  photo?: string
+  userId: string
+  user?: User
+  itemId: string
+  item?: Item
   createdAt: Date
 }

@@ -1,26 +1,33 @@
-# Daftar Fitur dan Endpoint yang Belum Terimplementasi
+# Daftar Fitur dan Pekerjaan yang Harus Diselesaikan (Updated Schema)
 
-Berdasarkan _flowchart_ awal dan pengecekan kode saat ini pada _frontend_ maupun _backend_, berikut adalah daftar fitur, halaman, atau _endpoint_ yang belum terimplementasikan sepenuhnya:
+Sehubungan dengan pembaruan _skema Prisma_ (menjadi `Category`, `Item`, dan `ActivityLog`) dan _Flowchart Mermaid_, daftar pekerjaan atau _TODO_ untuk migrasi serta pengembangan lanjutan adalah sebagai berikut:
+
+## Database & Backend
+
+1. **Refactor Backend Routes (Master Data)**
+   - Menghapus _routes_ lama seperti `jadwal.ts` dan `transaksi.ts`.
+   - Membuat/mengubah _route_ menjadi `item.ts`, `category.ts`, dan `activity.ts`.
+   - Menyelaraskan modul _auth.ts_ dengan struktur Role baru (`ADMIN` & `USER`).
+
+2. **Memperbarui Stat Engine (Laporan)**
+   - Menyusun ulang logika pelaporan (`GET /api/stats` atau `/api/laporan`) agar perhitungan indikator berbasis entri pada tabel `ActivityLog` bukan lagi tabel `Transaksi`.
+
+3. **Memperbarui Prisma Seeder**
+   - Membuat ulang _script_ di `prisma/seed.ts` agar mengisi _dummy_ `Category`, `Item`, dan Role yang baru sebelum UI dikerjakan.
 
 ## Frontend
 
-1. **Halaman Dashboard Utama (`/`)**
-   - **Belum terhubung ke API (Statis)**: Nilai ringkasan seperti "Kepatuhan Hari Ini", "Tugas Selesai", "Terlambat", dan tabel "Jadwal Pemeliharaan Hari Ini" masih berupa teks bawaan (statis). Belum menggunakan React Query untuk mengambil data dari _backend_.
+1. **Refactor Akses Hook API (`React Query`)**
+   - Membuang/Menyesuaikan _hooks_ lama di `apps/frontend/src/hooks` agar memanggil _endpoint_ yang baru (`/api/items`, `/api/activities`).
 
-2. **Halaman Login (`/login`)**
-   - **Belum terhubung ke `POST /api/auth/login`**: Masih menggunakan form _dummy_ tanpa ada mekanisme pengiriman data `username` dan `password` ke _backend_.
-   - **Belum ada Manajemen Sesi (_Session Management_)**: Belum ada mekanisme untuk menyimpan JWT Token, _role_ (`ADMIN` atau `PETUGAS`), dan _Redirect_ apabila _login_ berhasil / mencegah _user_ yang belum login mengakses halaman internal.
+2. **Perombakan Halaman Master (`/master`)**
+   - Mengubah form Master dari pengelolaan `Asset` static (AC/APAR _enum_) menjadi Form `Item` interaktif dengan pilihan relasi berdasarkan tabel `Category`. Termasuk penambahan _field_ Speseifikasi (`spec`) dan _Code_.
 
-3. **Filter Waktu di Halaman Laporan (`/laporan`)**
-   - Hanya menampilkan seluruh rentang waktu dari data _dummy_. Di _flowchart_/konsep awal, ada _Filter Bulanan_ untuk memilih bulan dan tahun laporan kepatuhan. Belum ada opsi untuk klien dalam memilih filter tersebut atau menampilkannya dalam bentuk grafik aktual (masih sekadar kotak teks "_placeholder_").
+3. **Perombakan Form Aktivitas (Eks `/tugas`)**
+   - Sesuai _flowchart_, mengubah UI menjadi "Dashboard Petugas -> Pilih Alat dari Master -> Form Input Aktivitas". Form ini harus punya input _Checklist_ yang ramah JSON dan form _Note_.
 
-## Backend
+4. **Perombakan Halaman Dashboard Admin & Tabel (Laporan)**
+   - Menyiapkan UI komponen filter kategori (_Dropdown Kategori_) dan _Date Range_ untuk mem-filter data yang masuk ke Visualisasi Tabel dan Grafik Aktivitas.
 
-1. **Filter Query di Halaman Laporan (`GET /api/laporan/indikator-mutu`)**
-   - Data _request parameter_ seperti `month` dan `year` sudah diparsing, namun belum digunakan secara aktif di klausa `where` untuk metode `prisma.jadwal.count()` dan `prisma.transaksi.count()`. Hasilnya, persentase yang keluar selalu dihitung dari awal mula penciptaan aplikasi dan tidak per bulan spesifik.
-
-2. **Implementasi Hash Password di Modul Auth (`POST /api/auth/login`)**
-   - Pengecekan _password_ saat ini menggunakan komparasi _plain-text_ (`user.password !== password`). Di mode produksi, seharusnya disandingkan dengan _library_ pembungkus sandi kriptografis seperti _Bcrypt_ (_password hashing_).
-
-3. **Mekanisme Penjadwalan Pemeliharaan Otomatis**
-   - Dari sisi API sudah ada _endpoint_ `POST /api/jadwal` untuk membuat jadwal, namun pada skenario aslinya aplikasi rumah sakit seperti ini memerlukan jadwal rutin _(Automated Cron / Master Schedule Generator)_ untuk membuat jadwal harian baru secara otomatis keesokan harinya tanpa diketik satu-persatu secara manual dari API/aplikasi.
+5. **Halaman Login dan _Session Management_**
+   - _(Sisa dari TODO lama)_: Menghubungkan fungsi login _dummy_ dengan Auth _backend_ aktual beserta pembuatan halaman penjagaan/pembatasan rute (_Protected Routes_).

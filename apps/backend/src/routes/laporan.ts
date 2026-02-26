@@ -1,35 +1,41 @@
 import { Hono } from 'hono'
 import { prisma } from '../db'
-import { STATUS_PELAKSANAAN } from '@repo/resource'
 
 const laporan = new Hono()
 
 laporan.get('/indikator-mutu', async (c) => {
-    c.req.query()
-    // Filter theoretically by month/year here, for now calculating overall
+    // For now we aggregate all activity logs
+    // In the future this can accept ?startDate=&endDate= &categoryId=
 
-    const totalRencana = await prisma.jadwal.count()
+    const totalActivities = await prisma.activityLog.count()
 
-    // Numerator: transaksis completed strictly on or before time
-    const tepatWaktuCount = await prisma.transaksi.count({
-        where: {
-            status: STATUS_PELAKSANAAN.TEPAT_WAKTU
-        }
+    const activities = await prisma.activityLog.findMany({
+        include: {
+            item: {
+                include: { category: true }
+            }
+        },
+        orderBy: { createdAt: 'asc' }
     })
 
-    const denominaton = totalRencana
-    const numerator = tepatWaktuCount
+    // Group by category for a pie chart
+    const categoryCounts: Record<string, number> = {}
 
-    const percentage = denominaton > 0 ? (numerator / denominaton) * 100 : 0
+    // Group by date (YYYY-MM-DD) for a run chart/trend
+    const trendCounts: Record<string, number> = {}
+
+    activities.forEach(log => {
+        const cat = log.item.category.name
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1
+
+        const dateStr = log.createdAt.toISOString().split('T')[0]
+        trendCounts[dateStr] = (trendCounts[dateStr] || 0) + 1
+    })
 
     return c.json({
-        numerator,
-        denominator: denominaton,
-        percentage: percentage.toFixed(2) + '%',
-        visualData: {
-            label: 'Kepatuhan Pemeliharaan Rutin Aset',
-            value: percentage
-        }
+        total: totalActivities,
+        byCategory: Object.entries(categoryCounts).map(([label, value]) => ({ label, value })),
+        trend: Object.entries(trendCounts).map(([date, count]) => ({ date, count }))
     })
 })
 
