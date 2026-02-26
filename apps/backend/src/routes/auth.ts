@@ -60,8 +60,96 @@ auth.post('/login', async (c) => {
         name: user.name
     }
 
-    return c.json(payload)
-})
+    // Generate refresh token
+    const refreshToken = await generateRefreshToken(user.id);
+    return c.json({
+        ...payload,
+        refreshToken: refreshToken.token
+    });
+
+// Generate refresh token
+function generateRefreshToken(userId: string): Promise<RefreshToken> {
+  const token = crypto.randomBytes(64).toString('hex');
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiration
+
+  return prisma.refreshToken.create({
+    data: {
+      token,
+      userId,
+      expiresAt
+    }
+  });
+}
+
+// Revoke all refresh tokens for a user
+async function revokeUserRefreshTokens(userId: string): Promise<void> {
+  await prisma.refreshToken.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() }
+  });
+}
+
+// Refresh access token endpoint
+auth.post('/refresh', async (c) => {
+  const { refreshToken } = await c.req.json();
+  if (!refreshToken) {
+    return c.json({ error: 'Refresh token required' }, 400);
+  }
+
+  const storedToken = await prisma.refreshToken.findUnique({
+    where: { token: refreshToken }
+  });
+
+  if (!storedToken || storedToken.revokedAt || storedToken.expiresAt < new Date()) {
+    return c.json({ error: 'Invalid or expired refresh token' }, 401);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: storedToken.userId }
+  });
+
+  if (!user) {
+    return c.json({ error: 'User not found' }, 401);
+  }
+
+  // Generate new access token
+  if (!process.env.JWT_SECRET) {
+    return c.json({ error: 'Server configuration error' }, 500);
+  }
+
+  const newAccessToken = jwt.sign(
+    {
+      userId: user.id,
+      role: user.role,
+      username: user.username
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+
+  // Rotate refresh token: invalidate old one and issue new
+  await revokeUserRefreshTokens(user.id);
+  const newRefreshToken = await generateRefreshToken(user.id);
+
+  return c.json({
+    token: newAccessToken,
+    refreshToken: newRefreshToken.token,
+    user: { id: user.id, username: user.username, name: user.name, role: user.role }
+  });
+});
+
+// Logout endpoint
+auth.post('/logout', async (c) => {
+  const { refreshToken } = await c.req.json();
+  if (refreshToken) {
+    await prisma.refreshToken.update({
+      where: { token: refreshToken },
+      data: { revokedAt: new Date() }
+    });
+  }
+  return c.json({ message: 'Logged out successfully' });
+});
 
 const SignupBodySchema = z.object({
     username: z.string().min(3),
@@ -116,7 +204,11 @@ auth.post('/signup', async (c) => {
         name: user.name
     }
 
-    return c.json(payload, 201)
-})
+    // Generate refresh token
+    const refreshToken = await generateRefreshToken(user.id);
+    return c.json({
+        ...payload,
+        refreshToken: refreshToken.token
+    }, 201);
 
 export default auth

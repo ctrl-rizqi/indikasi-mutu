@@ -9,10 +9,25 @@ import items from './routes/items'
 import categories from './routes/categories'
 import activities from './routes/activities'
 import { cors } from 'hono/cors'
+import { authMiddleware } from './middleware/authMiddleware'
 
+// Validate required environment variables
+const requiredEnvVars = ['JWT_SECRET', 'DATABASE_URL'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
 const app = new Hono()
 
 app.use('/api/*', cors())
+
+// Apply authentication middleware to all protected route routers
+items.use(authMiddleware);
+categories.use(authMiddleware);
+activities.use(authMiddleware);
+laporan.use(authMiddleware);
 
 app.route('/api/health', health)
 app.route('/api/auth', auth)
