@@ -1,10 +1,11 @@
 import { Hono } from 'hono'
 import { prisma } from '../db'
 import type { Role } from '@repo/resource'
+import type { RefreshToken } from '@prisma/client'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
-
+import crypto from 'crypto'
 const auth = new Hono()
 
 const LoginBodySchema = z.object({
@@ -65,6 +66,7 @@ auth.post('/login', async (c) => {
     return c.json({
         ...payload,
         refreshToken: refreshToken.token
+    });
     });
 
 // Generate refresh token
@@ -210,5 +212,6 @@ auth.post('/signup', async (c) => {
         ...payload,
         refreshToken: refreshToken.token
     }, 201);
+});
 
 export default auth

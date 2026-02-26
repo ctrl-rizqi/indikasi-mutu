@@ -6,7 +6,8 @@ export const Route = createFileRoute('/laporan')({
 })
 
 function RouteComponent() {
-  const { data, isLoading, error, refetch, isFetching } = useLaporanIndikatorQuery()
+  const { data, isLoading, error, refetch, isFetching } =
+    useLaporanIndikatorQuery()
 
   // Fallback to default values when no data
   const defaultLaporan = {
@@ -46,7 +47,7 @@ function RouteComponent() {
           </div>
         ) : error ? (
           <div className="p-12 text-center text-red-500 font-mono">
-            Error: {(error as Error).message}
+            Error: {error.message}
           </div>
         ) : (
           <>

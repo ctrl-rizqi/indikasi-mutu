@@ -9,6 +9,8 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import Header from '../components/Header'
 
 import TanStackQueryProvider from '../integrations/tanstack-query/root-provider'
+import { useAuthStore } from '../store/authStore';
+import { useEffect } from 'react';
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -44,6 +46,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   shellComponent: RootDocument,
 })
 
+function AuthInitializer() {
+  const refreshAuthToken = useAuthStore((state) => state.refreshAuthToken);
+  useEffect(() => {
+    refreshAuthToken();
+  }, [refreshAuthToken]);
+  return null;
+}
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
@@ -52,6 +62,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased text-slate-900 bg-slate-50 h-screen overflow-hidden flex flex-col">
         <TanStackQueryProvider>
+          <AuthInitializer />
           <Header />
           <div className="flex flex-1 overflow-hidden">
             <main className="flex-1 overflow-y-auto w-full lg:w-[calc(100%-18rem)] relative">
