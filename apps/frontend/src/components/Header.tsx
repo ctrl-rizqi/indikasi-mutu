@@ -1,38 +1,27 @@
-import { Link, useNavigate, useLocation } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { Box, Menu, X, LogOut } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useAuthStore } from '../store/authStore'
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  const [role, setRole] = useState<string | null>(null)
-  const [user, setUser] = useState<any>(null)
-
-  // Re-check auth on route change
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const r = localStorage.getItem('dummy_role')
-      const u = localStorage.getItem('dummy_user')
-      setRole(r)
-      if (u) {
-        try {
-          setUser(JSON.parse(u))
-        } catch {
-          // ignore
-        }
-      }
-    }
-  }, [location.pathname])
+  
+  const user = useAuthStore((state) => state.user)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const logout = useAuthStore((state) => state.logout)
 
   const handleLogout = () => {
-    localStorage.removeItem('dummy_role')
-    localStorage.removeItem('dummy_user')
-    setRole(null)
-    setUser(null)
-    navigate({ to: '/login' })
+    logout()
   }
+
+  const navItems = [
+    ...(isAuthenticated ? [{ label: 'Home', to: '/' as const }] : []),
+    ...(user?.role === 'USER' ? [{ label: 'Tugas / Aktivitas', to: '/tugas' as const }] : []),
+    ...(user?.role === 'ADMIN' ? [
+      { label: 'Master Item', to: '/master' as const },
+      { label: 'Laporan', to: '/laporan' as const },
+    ] : []),
+  ]
 
   return (
     <header className="flex items-center justify-between p-4 bg-[#0E172A] text-white relative">
@@ -47,30 +36,12 @@ export default function Header() {
       {/* Desktop Menu */}
       <nav className="hidden md:block">
         <ul className="flex items-center gap-2">
-          {role && (
-            <li className="hover:bg-gray-700 rounded-md p-2 cursor-pointer uppercase font-semibold">
-              <Link to="/">Home</Link>
+          {navItems.map((item) => (
+            <li key={item.to} className="hover:bg-gray-700 rounded-md p-2 cursor-pointer uppercase font-semibold">
+              <Link to={item.to}>{item.label}</Link>
             </li>
-          )}
-
-          {role === 'USER' && (
-            <li className="hover:bg-gray-700 rounded-md p-2 cursor-pointer uppercase font-semibold">
-              <Link to="/">Tugas / Aktivitas</Link>
-            </li>
-          )}
-
-          {role === 'ADMIN' && (
-            <>
-              <li className="hover:bg-gray-700 rounded-md p-2 cursor-pointer uppercase font-semibold">
-                <Link to="/master">Master Item</Link>
-              </li>
-              <li className="hover:bg-gray-700 rounded-md p-2 cursor-pointer uppercase font-semibold">
-                <Link to="/laporan">Laporan</Link>
-              </li>
-            </>
-          )}
-
-          {!role && (
+          ))}
+          {!isAuthenticated && (
             <li className="hover:bg-blue-600 bg-blue-500 rounded-md p-2 cursor-pointer uppercase font-semibold ml-4">
               <Link to="/login">Login</Link>
             </li>
@@ -81,18 +52,18 @@ export default function Header() {
       {/* User / Hamburger Menu Toggle */}
       <div className="flex items-center gap-4">
         {/* User Info */}
-        {role && (
+        {isAuthenticated && (
           <div className="hidden sm:flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold">
-                {role === 'ADMIN' ? 'AD' : 'PT'}
+                {user?.role === 'ADMIN' ? 'AD' : 'PT'}
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-semibold leading-tight">
-                  {user?.name || role}
+                  {user?.name || user?.role}
                 </span>
                 <span className="text-xs text-gray-400 capitalize leading-tight">
-                  {role.toLowerCase()}
+                  {user?.role?.toLowerCase()}
                 </span>
               </div>
             </div>
@@ -120,46 +91,17 @@ export default function Header() {
       {isMobileMenuOpen && (
         <div className="absolute top-full left-0 w-full bg-[#0E172A] border-t border-gray-700 md:hidden z-50 shadow-xl">
           <nav className="flex flex-col p-4 space-y-2">
-            {role && (
+            {navItems.map((item) => (
               <Link
-                to="/"
+                key={item.to}
+                to={item.to}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="hover:bg-gray-700 p-3 rounded-md uppercase font-semibold"
               >
-                Home
+                {item.label}
               </Link>
-            )}
-
-            {role === 'USER' && (
-              <Link
-                to="/"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="hover:bg-gray-700 p-3 rounded-md uppercase font-semibold"
-              >
-                Tugas / Aktivitas
-              </Link>
-            )}
-
-            {role === 'ADMIN' && (
-              <>
-                <Link
-                  to="/master"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="hover:bg-gray-700 p-3 rounded-md uppercase font-semibold"
-                >
-                  Master Item
-                </Link>
-                <Link
-                  to="/laporan"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="hover:bg-gray-700 p-3 rounded-md uppercase font-semibold"
-                >
-                  Laporan
-                </Link>
-              </>
-            )}
-
-            {!role ? (
+            ))}
+            {!isAuthenticated ? (
               <Link
                 to="/login"
                 onClick={() => setIsMobileMenuOpen(false)}

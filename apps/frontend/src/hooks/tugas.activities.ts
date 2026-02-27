@@ -16,7 +16,9 @@ export type CreateActivityPayload = {
 }
 
 export const ACTIVITIES_QUERY_KEY = ['tugas-activities'] as const
+export const ITEMS_QUERY_KEY = ['tugas-items'] as const
 
+// Fetch all activities
 const fetchActivities = async (): Promise<ActivityLogWithRelations[]> => {
   const response = await authenticatedFetch('/activities')
 
@@ -25,6 +27,17 @@ const fetchActivities = async (): Promise<ActivityLogWithRelations[]> => {
   }
 
   return (await response.json()) as ActivityLogWithRelations[]
+}
+
+// Fetch items for dropdown selection
+const fetchItems = async (): Promise<Item[]> => {
+  const response = await authenticatedFetch('/items')
+
+  if (!response.ok) {
+    throw new Error('Gagal mengambil data item')
+  }
+
+  return (await response.json()) as Item[]
 }
 
 const createActivity = async (
@@ -47,6 +60,13 @@ export const useTugasActivitiesQuery = () => {
   return useQuery({
     queryKey: ACTIVITIES_QUERY_KEY,
     queryFn: fetchActivities,
+  })
+}
+
+export const useTugasItemsQuery = () => {
+  return useQuery({
+    queryKey: ITEMS_QUERY_KEY,
+    queryFn: fetchItems,
   })
 }
 

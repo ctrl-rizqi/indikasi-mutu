@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnauthorizedRouteImport } from './routes/unauthorized'
+import { Route as TugasRouteImport } from './routes/tugas'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoginRouteImport } from './routes/login'
@@ -20,6 +21,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const UnauthorizedRoute = UnauthorizedRouteImport.update({
   id: '/unauthorized',
   path: '/unauthorized',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TugasRoute = TugasRouteImport.update({
+  id: '/tugas',
+  path: '/tugas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/master': typeof MasterRoute
   '/signup': typeof SignupRoute
+  '/tugas': typeof TugasRoute
   '/unauthorized': typeof UnauthorizedRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/master': typeof MasterRoute
   '/signup': typeof SignupRoute
+  '/tugas': typeof TugasRoute
   '/unauthorized': typeof UnauthorizedRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/master': typeof MasterRoute
   '/signup': typeof SignupRoute
+  '/tugas': typeof TugasRoute
   '/unauthorized': typeof UnauthorizedRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/master'
     | '/signup'
+    | '/tugas'
     | '/unauthorized'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/master'
     | '/signup'
+    | '/tugas'
     | '/unauthorized'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/master'
     | '/signup'
+    | '/tugas'
     | '/unauthorized'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MasterRoute: typeof MasterRoute
   SignupRoute: typeof SignupRoute
+  TugasRoute: typeof TugasRoute
   UnauthorizedRoute: typeof UnauthorizedRoute
 }
 
@@ -128,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/unauthorized'
       fullPath: '/unauthorized'
       preLoaderRoute: typeof UnauthorizedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tugas': {
+      id: '/tugas'
+      path: '/tugas'
+      fullPath: '/tugas'
+      preLoaderRoute: typeof TugasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -182,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MasterRoute: MasterRoute,
   SignupRoute: SignupRoute,
+  TugasRoute: TugasRoute,
   UnauthorizedRoute: UnauthorizedRoute,
 }
 export const routeTree = rootRouteImport

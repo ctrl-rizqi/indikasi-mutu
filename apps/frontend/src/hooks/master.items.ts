@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Category, Item } from '@repo/resource'
-import { authenticatedFetch, API_BASE_URL } from '../lib/api-client'
+import { authenticatedFetch } from '../lib/api-client'
 
 export type CategoryOption = Pick<Category, 'id' | 'name'>
 
