@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY . /usr/src/app
 WORKDIR /usr/src/app
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Build the frontend and its workspace dependencies
 # Note: VITE_ variables must be set at build time for SPAs

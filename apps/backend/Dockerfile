@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY . /usr/src/app
 WORKDIR /usr/src/app
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Generate Prisma client
 WORKDIR /usr/src/app/apps/backend
@@ -23,32 +23,10 @@ RUN pnpm db:generate
 WORKDIR /usr/src/app
 RUN pnpm --filter @repo/backend run build
 
+RUN pnpm --filter @repo/backend deploy --legacy /usr/src/app/pruned
+
 FROM base AS runtime
-WORKDIR /usr/src/app
-
-# Copy necessary files from build stage
-COPY --from=build /usr/src/app/package.json ./package.json
-COPY --from=build /usr/src/app/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=build /usr/src/app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --from=build /usr/src/app/apps/backend/package.json ./apps/backend/package.json
-COPY --from=build /usr/src/app/apps/backend/prisma.config.ts ./apps/backend/prisma.config.ts
-COPY --from=build /usr/src/app/apps/backend/dist ./apps/backend/dist
-COPY --from=build /usr/src/app/apps/backend/prisma ./apps/backend/prisma
-COPY --from=build /usr/src/app/packages/resource ./packages/resource
-
-# bcrypt and other native modules need to be rebuilt for the runtime image
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    && pnpm install --frozen-lockfile --filter @repo/backend... \
-    && apt-get purge -y python3 make g++ \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /usr/src/app/apps/backend
+COPY --from=build /usr/src/app/pruned ./
 EXPOSE 5000
-
-# Script to run migrations and start
-CMD ["sh", "-c", "pnpm db:push && pnpm start"]
+CMD ["sh", "-c", "pnpm db:generate && pnpm db:push && pnpm start"]

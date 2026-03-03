@@ -79,3 +79,6 @@ Desktop.ini
 *.njsproj
 *.sln
 *.sw?
+
+example.txt
+example.env.docker
