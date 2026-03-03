@@ -33,7 +33,7 @@ RUN corepack enable
 WORKDIR /usr/src/app/apps/frontend
 COPY --from=build /usr/src/app/pruned-frontend ./
 # Copy from the dist folder as requested
-COPY --from=build /usr/src/app/apps/frontend/dist ./dist/
+COPY --from=build /usr/src/app/apps/frontend/dist ./dist/server
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
