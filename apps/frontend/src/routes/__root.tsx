@@ -1,8 +1,4 @@
-import {
-  HeadContent,
-  Scripts,
-  createRootRouteWithContext,
-} from '@tanstack/react-router'
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
@@ -14,8 +10,6 @@ import { useEffect } from 'react'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
-import appCss from '../styles.css?url'
-
 import type { QueryClient } from '@tanstack/react-query'
 
 interface MyRouterContext {
@@ -23,27 +17,7 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  head: () => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'TanStack Start Starter',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
-    ],
-  }),
-  shellComponent: RootDocument,
+  component: RootLayout,
 })
 
 function AuthInitializer() {
@@ -54,7 +28,6 @@ function AuthInitializer() {
     initialize()
   }, [initialize])
 
-  // Don't render children until auth is initialized
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -66,37 +39,28 @@ function AuthInitializer() {
   return null
 }
 
-
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootLayout() {
   return (
-    <html lang="id">
-      <head>
-        <HeadContent />
-      </head>
-      <body className="font-sans antialiased text-slate-900 bg-slate-50 h-screen overflow-hidden flex flex-col">
-        <TanStackQueryProvider>
-          <AuthInitializer />
-          <Header />
-          <div className="flex flex-1 overflow-hidden">
-            <main className="flex-1 overflow-y-auto w-full lg:w-[calc(100%-18rem)] relative">
-              {children}
-            </main>
-          </div>
-          <TanStackDevtools
-            config={{
-              position: 'bottom-right',
-            }}
-            plugins={[
-              {
-                name: 'Tanstack Router',
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-              TanStackQueryDevtools,
-            ]}
-          />
-        </TanStackQueryProvider>
-        <Scripts />
-      </body>
-    </html>
+    <TanStackQueryProvider>
+      <AuthInitializer />
+      <Header />
+      <div className="flex flex-1 overflow-hidden">
+        <main className="flex-1 overflow-y-auto w-full lg:w-[calc(100%-18rem)] relative">
+          <Outlet />
+        </main>
+      </div>
+      <TanStackDevtools
+        config={{
+          position: 'bottom-right',
+        }}
+        plugins={[
+          {
+            name: 'Tanstack Router',
+            render: <TanStackRouterDevtoolsPanel />,
+          },
+          TanStackQueryDevtools,
+        ]}
+      />
+    </TanStackQueryProvider>
   )
 }
