@@ -31,17 +31,15 @@ FROM base AS runtime
 
 WORKDIR /usr/src/app
 
-# Salin package.json workspace untuk pnpm install --prod
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY packages/ ./packages/
-COPY apps/frontend/package.json ./apps/frontend/package.json
-
-# Install hanya production dependencies
-RUN pnpm install --frozen-lockfile --prod
+# Salin node_modules dari build stage (sudah lengkap termasuk deps SSR)
+COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/apps/frontend/node_modules ./apps/frontend/node_modules
+COPY --from=build /usr/src/app/packages ./packages
 
 # Salin hasil build dan server adapter
 COPY --from=build /usr/src/app/apps/frontend/dist ./apps/frontend/dist
 COPY apps/frontend/server.mjs ./apps/frontend/server.mjs
+COPY apps/frontend/package.json ./apps/frontend/package.json
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -51,3 +49,4 @@ WORKDIR /usr/src/app/apps/frontend
 EXPOSE 3000
 
 CMD ["node", "server.mjs"]
+
