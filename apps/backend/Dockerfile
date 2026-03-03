@@ -31,6 +31,7 @@ COPY --from=build /usr/src/app/package.json ./package.json
 COPY --from=build /usr/src/app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=build /usr/src/app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=build /usr/src/app/apps/backend/package.json ./apps/backend/package.json
+COPY --from=build /usr/src/app/apps/backend/prisma.config.ts ./apps/backend/prisma.config.ts
 COPY --from=build /usr/src/app/apps/backend/dist ./apps/backend/dist
 COPY --from=build /usr/src/app/apps/backend/prisma ./apps/backend/prisma
 COPY --from=build /usr/src/app/packages/resource ./packages/resource
