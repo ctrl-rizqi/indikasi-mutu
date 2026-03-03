@@ -3,7 +3,7 @@ import { authAPI } from './auth'
 import { useAuthStore } from '../store/authStore'
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api'
+  import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api'
 
 /**
  * Authenticated fetch wrapper that:
@@ -17,7 +17,7 @@ export async function authenticatedFetch(
 ): Promise<Response> {
   // Get token from cookie
   const token = Cookies.get('auth_token')
-  
+
   const headers: HeadersInit = {
     ...options.headers,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -31,11 +31,11 @@ export async function authenticatedFetch(
   // If 401, try to refresh token
   if (response.status === 401) {
     const refreshToken = localStorage.getItem('refresh_token')
-    
+
     if (refreshToken) {
       try {
         const newTokens = await authAPI.refreshToken(refreshToken)
-        
+
         // Update stores
         Cookies.set('auth_token', newTokens.token, {
           secure: true,
@@ -43,17 +43,17 @@ export async function authenticatedFetch(
           expires: 1 / 144,
         })
         localStorage.setItem('refresh_token', newTokens.refreshToken)
-        
+
         // Update auth store
         useAuthStore.getState().refreshAuthToken()
-        
+
         // Retry with new token
         const newToken = newTokens.token
         const retryHeaders: HeadersInit = {
           ...options.headers,
           Authorization: `Bearer ${newToken}`,
         }
-        
+
         response = await fetch(`${API_BASE_URL}${endpoint}`, {
           ...options,
           headers: retryHeaders,
