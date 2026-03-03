@@ -1,28 +1,108 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import {
+  createFileRoute,
+  useNavigate,
+  Link as RouterLink,
+} from '@tanstack/react-router'
+import { useState, useCallback, useMemo } from 'react'
 import { useAuthStore } from '../store/authStore'
+import {
+  Container,
+  Paper,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+  AlertTitle,
+  CircularProgress,
+  Link,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment,
+} from '@mui/material'
+import { Lock, User, UserCircle } from 'lucide-react'
 
 export const Route = createFileRoute('/signup')({
   component: SignupPage,
 })
 
+// Initial form state constant
+const INITIAL_FORM_STATE = {
+  username: '',
+  password: '',
+  name: '',
+  role: 'USER' as 'USER' | 'ADMIN',
+}
+
+// Type for form state
+type FormState = typeof INITIAL_FORM_STATE
+
+// Form field configuration for reusability
+const FORM_FIELDS = [
+  {
+    name: 'name' as const,
+    label: 'Full Name',
+    placeholder: 'Enter your full name',
+    type: 'text',
+    icon: UserCircle,
+    required: true,
+  },
+  {
+    name: 'username' as const,
+    label: 'Username',
+    placeholder: 'Enter your username',
+    type: 'text',
+    icon: User,
+    required: true,
+  },
+  {
+    name: 'password' as const,
+    label: 'Password',
+    placeholder: 'Enter your password',
+    type: 'password',
+    icon: Lock,
+    required: true,
+  },
+] as const
+
+// Role options
+const ROLE_OPTIONS = [
+  { key: 'USER', label: 'User' },
+  { key: 'ADMIN', label: 'Admin' },
+] as const
+
 export default function SignupPage() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-  const [role, setRole] = useState<'USER' | 'ADMIN'>('USER')
+  const [form, setForm] = useState<FormState>(INITIAL_FORM_STATE)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const signup = useAuthStore((state) => state.signup)
   const navigate = useNavigate()
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  // Form validation
+  const isFormValid = useMemo(() => {
+    return !!(form.name && form.username && form.password && form.role)
+  }, [form])
+
+  // Generic input change handler
+  const handleInputChange = useCallback(
+    (field: keyof FormState, value: string) => {
+      setForm((prev) => ({ ...prev, [field]: value }))
+    },
+    [],
+  )
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isFormValid) return
+
     setError('')
     setLoading(true)
 
     try {
-      await signup({ username, password, name, role })
+      await signup(form)
       navigate({ to: '/dashboard' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed')
@@ -32,121 +112,109 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
-        <div>
-          <h2 className="text-3xl font-bold text-center text-gray-900">
-            Create an account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Enter your details to get started
-          </p>
-        </div>
+    <Box 
+      sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        bgcolor: 'background.default',
+        p: 2 
+      }}
+    >
+      <Container maxWidth="xs">
+        <Paper elevation={3} sx={{ p: 4, borderRadius: 2, bgcolor: 'background.paper' }}>
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography variant="h4" fontWeight="bold" gutterBottom color="white">
+              Create an account
+            </Typography>
+            <Typography variant="body2" color="rgba(255, 255, 255, 0.6)">
+              Enter your details to get started
+            </Typography>
+          </Box>
 
-        {error && (
-          <div className="p-3 text-sm text-red-700 bg-red-100 rounded-md">
-            {error}
-          </div>
-        )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              <AlertTitle>Error</AlertTitle>
+              {error}
+            </Alert>
+          )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Full Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your full name"
-            />
-          </div>
+          <form onSubmit={handleSubmit}>
+            <Stack spacing={3}>
+              {FORM_FIELDS.map((field) => (
+                <TextField
+                  key={field.name}
+                  fullWidth
+                  label={field.label}
+                  placeholder={field.placeholder}
+                  type={field.type}
+                  variant="outlined"
+                  value={form[field.name]}
+                  onChange={(e) => handleInputChange(field.name, e.target.value)}
+                  required={field.required}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <field.icon size={20} color="rgba(255, 255, 255, 0.4)" />
+                        </InputAdornment>
+                      ),
+                    },
+                    inputLabel: { shrink: true }
+                  }}
+                />
+              ))}
 
-          <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Username
-            </label>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your username"
-            />
-          </div>
+              <FormControl fullWidth required variant="outlined">
+                <InputLabel shrink>Role</InputLabel>
+                <Select
+                  value={form.role}
+                  label="Role"
+                  onChange={(e) => handleInputChange('role', e.target.value)}
+                  notched
+                >
+                  {ROLE_OPTIONS.map((role) => (
+                    <MenuItem key={role.key} value={role.key}>
+                      {role.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your password"
-            />
-          </div>
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                disabled={!isFormValid || loading}
+                sx={{ 
+                  py: 1.5, 
+                  bgcolor: 'primary.main', 
+                  '&:hover': { bgcolor: 'primary.dark' },
+                  textTransform: 'none',
+                  fontWeight: 'bold',
+                  mt: 1
+                }}
+              >
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Create account'}
+              </Button>
+            </Stack>
+          </form>
 
-          <div>
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value as 'USER' | 'ADMIN')}
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="USER">User</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {loading ? 'Creating account...' : 'Create account'}
-          </button>
-        </form>
-
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <a
-              href="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              Sign in
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
+          <Box sx={{ mt: 4, textAlign: 'center' }}>
+            <Typography variant="body2" color="rgba(255, 255, 255, 0.6)">
+              Already have an account?{' '}
+              <Link
+                component={RouterLink}
+                to="/login"
+                sx={{ color: 'primary.main', fontWeight: 'bold', textDecoration: 'none' }}
+              >
+                Sign in
+              </Link>
+            </Typography>
+          </Box>
+        </Paper>
+      </Container>
+    </Box>
   )
 }

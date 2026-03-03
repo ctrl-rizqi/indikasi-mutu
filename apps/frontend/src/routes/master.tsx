@@ -1,31 +1,168 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import type { SubmitEventHandler } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   useMasterItemsQuery,
   useMasterCategoriesQuery,
   useCreateItemMutation,
 } from '../hooks/master.items'
 import ProtectedRoute from '../components/ProtectedRoute'
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  Alert,
+  Grid,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  CircularProgress,
+} from '@mui/material'
+import { Edit2, Trash2, Package, CheckCircle } from 'lucide-react'
 
 export const Route = createFileRoute('/master')({
   component: RouteComponent,
 })
 
+const INITIAL_FORM_STATE = {
+  name: '',
+  code: '',
+  location: '',
+  categoryId: '',
+  spec: '',
+}
+
+const FORM_FIELDS = [
+  {
+    name: 'name' as const,
+    label: 'Nama Alat',
+    placeholder: 'e.g AC Daikin 1PK',
+    required: true,
+    gridSize: { xs: 12, md: 4 },
+  },
+  {
+    name: 'code' as const,
+    label: 'Kode Alat / No Seri',
+    placeholder: 'e.g AC-LT2-01',
+    required: true,
+    gridSize: { xs: 12, md: 4 },
+  },
+  {
+    name: 'location' as const,
+    label: 'Lokasi / Ruangan',
+    placeholder: 'e.g Ruang Tunggu',
+    required: true,
+    gridSize: { xs: 12, md: 4 },
+  },
+  {
+    name: 'spec' as const,
+    label: 'Spesifikasi Detail (Opsional)',
+    placeholder: 'e.g Watt, Kapasitas...',
+    required: false,
+    gridSize: { xs: 12, md: 8 },
+  },
+] as const
+
+type FormState = typeof INITIAL_FORM_STATE
+type FeedbackState = {
+  severity: 'success' | 'error'
+  message: string
+}
+
+function StatusChip({ status }: { status: string }) {
+  const isActive = status === 'ACTIVE'
+  return (
+    <Chip
+      label={status}
+      color={isActive ? 'success' : 'warning'}
+      size="small"
+      variant="outlined"
+      sx={{ fontWeight: 700 }}
+    />
+  )
+}
+
+function ItemActions() {
+  return (
+    <Stack direction="row" spacing={1} justifyContent="flex-end">
+      <IconButton size="small" color="primary" aria-label="Edit item">
+        <Edit2 size={16} />
+      </IconButton>
+      <IconButton size="small" color="error" aria-label="Delete item">
+        <Trash2 size={16} />
+      </IconButton>
+    </Stack>
+  )
+}
+
 export default function RouteComponent() {
-  const [form, setForm] = useState({
-    name: '',
-    code: '',
-    location: '',
-    categoryId: '',
-    spec: '',
-  })
+  const [form, setForm] = useState<FormState>(INITIAL_FORM_STATE)
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null)
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { data: items = [], isLoading: isLoadingItems } = useMasterItemsQuery()
-  const { data: categories = [], isLoading: isLoadingCategories } = useMasterCategoriesQuery()
+  const { data: categories = [], isLoading: isLoadingCategories } =
+    useMasterCategoriesQuery()
   const createItemMutation = useCreateItemMutation()
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const isFormValid = !!(
+    form.name &&
+    form.code &&
+    form.location &&
+    form.categoryId
+  )
+
+  const handleInputChange = useCallback(
+    (field: keyof FormState, value: string) => {
+      setForm((prev) => ({ ...prev, [field]: value }))
+    },
+    [],
+  )
+
+  const resetForm = useCallback(() => {
+    setForm(INITIAL_FORM_STATE)
+  }, [])
+
+  const showFeedback = useCallback(
+    (severity: FeedbackState['severity'], message: string) => {
+      setFeedback({ severity, message })
+
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current)
+      }
+
+      feedbackTimerRef.current = setTimeout(() => {
+        setFeedback(null)
+        feedbackTimerRef.current = null
+      }, 3000)
+    },
+    [],
+  )
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current)
+      }
+    }
+  }, [])
+
+  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault()
+
+    if (!isFormValid) return
 
     try {
       await createItemMutation.mutateAsync({
@@ -36,201 +173,208 @@ export default function RouteComponent() {
         spec: form.spec || undefined,
       })
 
-      // Reset form
-      setForm({
-        name: '',
-        code: '',
-        location: '',
-        categoryId: categories[0]?.id || '',
-        spec: '',
-      })
+      resetForm()
+      showFeedback('success', `Item "${form.name}" berhasil ditambahkan!`)
     } catch (error) {
-      console.error('Failed to create item:', error)
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Gagal menambahkan item. Silakan coba lagi.'
+      showFeedback('error', errorMessage)
     }
   }
 
-  const isLoading = isLoadingItems || isLoadingCategories
   const isSubmitting = createItemMutation.isPending
 
   return (
     <ProtectedRoute requiredRole="ADMIN">
-      <div className="p-6 space-y-6">
-      <section className="border shadow-md bg-white p-4">
-        <h1 className="text-lg font-semibold border-b pb-2 mb-4">
-          Kelola Master Item
-        </h1>
-        <p className="text-sm text-slate-600 mb-4 font-mono">
-          [Alur Admin] Tambah Alat: AC/APAR/Lainnya
-        </p>
+      <Box sx={{ p: { xs: 3, md: 6 }, maxWidth: '1200px', mx: 'auto' }}>
+        <Stack spacing={4}>
+          <Paper
+            elevation={0}
+            variant="outlined"
+            sx={{ p: { xs: 3, md: 4 }, borderRadius: 3 }}
+          >
+            <Box sx={{ mb: 3 }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Package size={20} />
+                <Typography variant="h5" fontWeight={700}>
+                  Kelola Master Item
+                </Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Tambah data alat dan pantau daftar item terdaftar.
+              </Typography>
+            </Box>
 
-        <form
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 border border-slate-200"
-          onSubmit={handleSubmit}
-        >
-          <div>
-            <label className="block text-xs font-semibold mb-1 text-slate-500">
-              Nama Alat
-            </label>
-            <input
-              className="border px-3 py-2 w-full text-sm"
-              placeholder="e.g AC Daikin 1PK"
-              value={form.name}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, name: e.target.value }))
-              }
-              required
-            />
-          </div>
+            {feedback && (
+              <Alert
+                severity={feedback.severity}
+                icon={
+                  feedback.severity === 'success' ? (
+                    <CheckCircle size={18} />
+                  ) : undefined
+                }
+                sx={{ mb: 3 }}
+              >
+                {feedback.message}
+              </Alert>
+            )}
 
-          <div>
-            <label className="block text-xs font-semibold mb-1 text-slate-500">
-              Kode Alat / No Seri
-            </label>
-            <input
-              className="border px-3 py-2 w-full text-sm"
-              placeholder="e.g AC-LT2-01"
-              value={form.code}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, code: e.target.value }))
-              }
-              required
-            />
-          </div>
+            <form onSubmit={handleSubmit}>
+              <Grid container spacing={3}>
+                {FORM_FIELDS.map((field) => (
+                  <Grid size={field.gridSize} key={field.name}>
+                    <TextField
+                      fullWidth
+                      label={field.label}
+                      placeholder={field.placeholder}
+                      value={form[field.name]}
+                      onChange={(e) =>
+                        handleInputChange(field.name, e.target.value)
+                      }
+                      required={field.required}
+                      variant="outlined"
+                    />
+                  </Grid>
+                ))}
 
-          <div>
-            <label className="block text-xs font-semibold mb-1 text-slate-500">
-              Kategori
-            </label>
-            <select
-              className="border px-3 py-2 w-full text-sm bg-white"
-              value={form.categoryId}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, categoryId: e.target.value }))
-              }
-              required
-            >
-              <option value="">Pilih Kategori</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold mb-1 text-slate-500">
-              Lokasi / Ruangan
-            </label>
-            <input
-              className="border px-3 py-2 w-full text-sm"
-              placeholder="e.g Ruang Tunggu"
-              value={form.location}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, location: e.target.value }))
-              }
-              required
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs font-semibold mb-1 text-slate-500">
-              Spesifikasi Detail (Opsional)
-            </label>
-            <input
-              className="border px-3 py-2 w-full text-sm"
-              placeholder="e.g Watt, Kapasitas..."
-              value={form.spec}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, spec: e.target.value }))
-              }
-            />
-          </div>
-
-          <div className="md:col-span-3 pt-2">
-            <button
-              type="submit"
-              className="border px-6 py-2 bg-slate-900 text-white font-semibold disabled:opacity-50 text-sm hover:bg-slate-800 transition shadow-sm"
-              disabled={isSubmitting || isLoading}
-            >
-              {isSubmitting ? 'Menyimpan...' : '+ Tambah Alat Master'}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section className="border bg-white shadow-md p-4 mt-6">
-        <div className="flex items-center justify-between mb-4 pb-2 border-b">
-          <h2 className="text-base font-semibold">
-            Daftar Master Item Terdaftar
-          </h2>
-          <span className="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
-            Total: {items.length} Item
-          </span>
-        </div>
-
-        {isLoading ? (
-          <div className="py-8 text-center text-slate-500">Memuat data...</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead className="bg-slate-50">
-                <tr className="border-b font-mono text-slate-600">
-                  <th className="text-left py-3 px-3">Kode</th>
-                  <th className="text-left py-3 px-3">Nama Alat</th>
-                  <th className="text-left py-3 px-3">Kategori</th>
-                  <th className="text-left py-3 px-3">Lokasi</th>
-                  <th className="text-left py-3 px-3">Status</th>
-                  <th className="text-right py-3 px-3">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 ? (
-                  <tr>
-                    <td className="py-8 text-center text-slate-500" colSpan={6}>
-                      Belum ada data item
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b hover:bg-slate-50 transition"
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <FormControl fullWidth required variant="outlined">
+                    <InputLabel>Kategori Item</InputLabel>
+                    <Select
+                      value={form.categoryId}
+                      label="Kategori Item"
+                      onChange={(e) =>
+                        handleInputChange('categoryId', e.target.value)
+                      }
+                      disabled={isLoadingCategories || isSubmitting}
                     >
-                      <td className="py-3 px-3 font-mono font-medium">
-                        {item.code}
-                      </td>
-                      <td className="py-3 px-3 font-medium text-slate-800">
-                        {item.name}
-                      </td>
-                      <td className="py-3 px-3 text-slate-600">
-                        {item.category?.name || 'Lainnya'}
-                      </td>
-                      <td className="py-3 px-3 text-slate-600">
-                        {item.location}
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-bold rounded">
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 p-1 mx-1 border border-blue-200 bg-blue-50">
-                          Edit
-                        </button>
-                        <button className="text-xs font-semibold text-red-600 hover:text-red-800 p-1 mx-1 border border-red-200 bg-red-50">
-                          Hapus
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    </div>
+                      <MenuItem value="" disabled>
+                        Pilih item...
+                      </MenuItem>
+                      {categories.map((category) => (
+                        <MenuItem key={category.id} value={category.id}>
+                          {category.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid size={12}>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={
+                        isLoadingCategories || isSubmitting || !isFormValid
+                      }
+                      sx={{
+                        px: 4,
+                        py: 1.2,
+                        fontWeight: 700,
+                        textTransform: 'none',
+                      }}
+                    >
+                      {isSubmitting ? (
+                        <CircularProgress size={24} color="inherit" />
+                      ) : (
+                        'Tambah Alat Master'
+                      )}
+                    </Button>
+                  </Box>
+                </Grid>
+              </Grid>
+            </form>
+          </Paper>
+
+          <Paper
+            elevation={0}
+            variant="outlined"
+            sx={{ borderRadius: 3, overflow: 'hidden' }}
+          >
+            <Box
+              sx={{
+                p: 3,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
+              }}
+            >
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography variant="h6" fontWeight={700}>
+                  Daftar Master Item Terdaftar
+                </Typography>
+                <Chip
+                  label={`Total: ${items.length} Item`}
+                  size="small"
+                  variant="outlined"
+                />
+              </Stack>
+            </Box>
+
+            <TableContainer>
+              <Table sx={{ minWidth: 650 }}>
+                <TableHead sx={{ bgcolor: 'action.hover' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>KODE</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>NAMA ALAT</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>KATEGORI</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>LOKASI</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>STATUS</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      AKSI
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {isLoadingItems ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                        <CircularProgress size={32} />
+                      </TableCell>
+                    </TableRow>
+                  ) : items.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Belum ada item terdaftar
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    items.map((item) => (
+                      <TableRow key={item.id} hover>
+                        <TableCell sx={{ fontFamily: 'monospace' }}>
+                          {item.code}
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 500 }}>
+                          {item.name}
+                        </TableCell>
+                        <TableCell>
+                          {item.category?.name || 'Lainnya'}
+                        </TableCell>
+                        <TableCell>{item.location}</TableCell>
+                        <TableCell>
+                          <StatusChip status={item.status} />
+                        </TableCell>
+                        <TableCell align="right">
+                          <ItemActions />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Stack>
+      </Box>
     </ProtectedRoute>
   )
 }

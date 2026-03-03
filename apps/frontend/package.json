@@ -15,7 +15,11 @@
     "check": "prettier --write . && eslint --fix"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@faker-js/faker": "^10.0.0",
+    "@mui/icons-material": "^7.3.8",
+    "@mui/material": "^7.3.8",
     "@repo/resource": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/match-sorter-utils": "^8.19.4",

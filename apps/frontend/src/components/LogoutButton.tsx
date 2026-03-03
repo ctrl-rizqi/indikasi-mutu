@@ -1,4 +1,6 @@
 import { useAuthStore } from '../store/authStore';
+import { Button } from '@mui/material';
+import { LogOut } from 'lucide-react';
 
 export default function LogoutButton() {
   const logout = useAuthStore((state) => state.logout);
@@ -9,11 +11,14 @@ export default function LogoutButton() {
   };
 
   return (
-    <button
+    <Button
+      variant="contained"
+      color="error"
       onClick={handleLogout}
-      className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+      startIcon={<LogOut size={18} />}
+      sx={{ textTransform: 'none' }}
     >
       Logout
-    </button>
+    </Button>
   );
 }

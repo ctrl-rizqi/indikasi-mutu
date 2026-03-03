@@ -1,13 +1,190 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import type { LaporanApiResponse } from '../hooks/laporan.indikator'
 import { useLaporanIndikatorQuery } from '../hooks/laporan.indikator'
 import { useTugasItemsQuery } from '../hooks/tugas.activities'
 import ProtectedRoute from '../components/ProtectedRoute'
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  CircularProgress,
+  Grid,
+  Stack,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  LinearProgress,
+} from '@mui/material'
+import { FileBarChart, RefreshCw, Calendar, Filter } from 'lucide-react'
 
 export const Route = createFileRoute('/laporan')({
   component: RouteComponent,
 })
+
+// Constants moved outside component to avoid recreation
+const DEFAULT_LAPORAN: LaporanApiResponse = {
+  meta: {
+    contractVersion: 2,
+    generatedAt: new Date(0).toISOString(),
+    filters: {
+      itemId: null,
+    },
+  },
+  summary: {
+    totalActivities: 0,
+    uniqueItems: 0,
+    uniqueCategories: 0,
+  },
+  breakdowns: {
+    byCategory: [],
+    byCondition: [],
+  },
+  trend: {
+    daily: [],
+  },
+  history: [],
+}
+
+const DEFAULT_CATEGORY = { categoryId: '-', categoryName: '-', count: 0 }
+const DEFAULT_CONDITION = { condition: '-', count: 0 }
+
+// Utility function moved outside component
+const formatCheckedAt = (value: string): string =>
+  new Date(value).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+// Reusable table components
+function TrendTable({
+  trend,
+}: {
+  trend: Array<{ date: string; count: number }>
+}) {
+  return (
+    <TableContainer>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ fontWeight: 'bold' }}>TANGGAL</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>AKTIVITAS</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {trend.map((entry) => (
+            <TableRow key={entry.date} hover>
+              <TableCell>{entry.date}</TableCell>
+              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{entry.count}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  )
+}
+
+interface HistoryEntry {
+  id: string
+  checkedAt: string
+  condition: string
+  categoryName: string
+  note: string | null
+}
+
+function HistoryTable({ history }: { history: HistoryEntry[] }) {
+  return (
+    <TableContainer>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ fontWeight: 'bold' }}>WAKTU</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>KONDISI</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>KATEGORI</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>CATATAN</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {history.map((entry) => (
+            <TableRow key={entry.id} hover>
+              <TableCell sx={{ fontSize: '0.75rem' }}>
+                {formatCheckedAt(entry.checkedAt)}
+              </TableCell>
+              <TableCell>
+                <Chip
+                  size="small"
+                  label={entry.condition}
+                  color={entry.condition === 'baik' ? 'success' : 'error'}
+                  variant="outlined"
+                />
+              </TableCell>
+              <TableCell>{entry.categoryName}</TableCell>
+              <TableCell sx={{ fontSize: '0.75rem', fontStyle: 'italic' }}>{entry.note ?? '-'}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  )
+}
+
+interface BreakdownEntry {
+  count: number
+  condition?: string
+  categoryName?: string
+}
+
+function BreakdownList({
+  data,
+  totalActivities,
+}: {
+  data: BreakdownEntry[]
+  totalActivities: number
+}) {
+  return (
+    <Stack spacing={3}>
+      {data.map((entry) => {
+        const label =
+          'condition' in entry && entry.condition
+            ? entry.condition
+            : entry.categoryName || '-'
+        const percentageValue = totalActivities
+          ? (entry.count / totalActivities) * 100
+          : 0
+        const percentageDisplay = percentageValue.toFixed(1)
+
+        return (
+          <Box key={label}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+              <Typography variant="body2" fontWeight="bold">{label}</Typography>
+              <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                {entry.count} ({percentageDisplay}%)
+              </Typography>
+            </Stack>
+            <LinearProgress 
+              variant="determinate" 
+              value={Math.min(percentageValue, 100)} 
+              sx={{ height: 8, borderRadius: 4, bgcolor: 'rgba(255, 255, 255, 0.05)' }}
+            />
+          </Box>
+        )
+      })}
+    </Stack>
+  )
+}
 
 export default function RouteComponent() {
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
@@ -17,312 +194,243 @@ export default function RouteComponent() {
   const [endDate, setEndDate] = useState<string>('')
 
   const { data: items = [] } = useTugasItemsQuery()
-  const { data, isLoading, error, refetch, isFetching } =
-    useLaporanIndikatorQuery(selectedItemId, startDate, endDate)
-
-  const defaultLaporan: LaporanApiResponse = {
-    meta: {
-      contractVersion: 2,
-      generatedAt: new Date(0).toISOString(),
-      filters: {
-        itemId: null,
-      },
-    },
-    summary: {
-      totalActivities: 0,
-      uniqueItems: 0,
-      uniqueCategories: 0,
-    },
-    breakdowns: {
-      byCategory: [],
-      byCondition: [],
-    },
-    trend: {
-      daily: [],
-    },
-    history: [],
-  }
-
-  const laporan = data ?? defaultLaporan
-  const byCategory = Array.isArray(laporan.breakdowns.byCategory)
-    ? laporan.breakdowns.byCategory
-    : []
-  const byCondition = Array.isArray(laporan.breakdowns.byCondition)
-    ? laporan.breakdowns.byCondition
-    : []
-  const trend = Array.isArray(laporan.trend.daily) ? laporan.trend.daily : []
-  const history = Array.isArray(laporan.history) ? laporan.history : []
-  const selectedItemName = items.find(
-    (item) => item.id === selectedItemId,
-  )?.name
-  const dominantCategory = byCategory.reduce(
-    (max, category) => (category.count > max.count ? category : max),
-    { categoryId: '-', categoryName: '-', count: 0 },
+  const { data, isLoading, error, refetch } = useLaporanIndikatorQuery(
+    selectedItemId,
+    startDate,
+    endDate,
   )
-  const dominantCondition = byCondition.reduce(
-    (max, condition) => (condition.count > max.count ? condition : max),
-    { condition: '-', count: 0 },
-  )
-  const latestTrend = trend[trend.length - 1]
-  const currentBreakdown = selectedItemId ? byCondition : byCategory
-  const currentBreakdownTitle = selectedItemId
-    ? 'Distribusi Kondisi'
-    : 'Distribusi Kategori'
-  const currentHighlightTitle = selectedItemId
-    ? `Kondisi Terbanyak (${dominantCondition.condition})`
-    : `Kategori Terbanyak (${dominantCategory.categoryName})`
-  const currentHighlightValue = selectedItemId
-    ? dominantCondition.count
-    : dominantCategory.count
-  const formatCheckedAt = (value: string) =>
-    new Date(value).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
 
-  console.log(laporan)
+  // Memoized derived values
+  const laporan = data ?? DEFAULT_LAPORAN
+
+  const { byCategory, byCondition, trend, history } = useMemo(
+    () => ({
+      byCategory: Array.isArray(laporan.breakdowns.byCategory)
+        ? laporan.breakdowns.byCategory
+        : [],
+      byCondition: Array.isArray(laporan.breakdowns.byCondition)
+        ? laporan.breakdowns.byCondition
+        : [],
+      trend: Array.isArray(laporan.trend.daily) ? laporan.trend.daily : [],
+      history: Array.isArray(laporan.history) ? laporan.history : [],
+    }),
+    [laporan],
+  )
+
+  const selectedItemName = useMemo(
+    () => items.find((item) => item.id === selectedItemId)?.name,
+    [items, selectedItemId],
+  )
+
+  const dominantCategory = useMemo(
+    () =>
+      byCategory.reduce(
+        (max, category) => (category.count > max.count ? category : max),
+        DEFAULT_CATEGORY,
+      ),
+    [byCategory],
+  )
+
+  const dominantCondition = useMemo(
+    () =>
+      byCondition.reduce(
+        (max, condition) => (condition.count > max.count ? condition : max),
+        DEFAULT_CONDITION,
+      ),
+    [byCondition],
+  )
+
+  const {
+    currentBreakdown,
+    currentBreakdownTitle,
+    currentHighlightTitle,
+    currentHighlightValue,
+  } = useMemo(() => {
+    const isItemSelected = !!selectedItemId
+    return {
+      currentBreakdown: isItemSelected ? byCondition : byCategory,
+      currentBreakdownTitle: isItemSelected
+        ? 'Distribusi Kondisi'
+        : 'Distribusi Kategori',
+      currentHighlightTitle: isItemSelected
+        ? `Kondisi Terbanyak (${dominantCondition.condition})`
+        : `Kategori Terbanyak (${dominantCategory.categoryName})`,
+      currentHighlightValue: isItemSelected
+        ? dominantCondition.count
+        : dominantCategory.count,
+    }
+  }, [
+    selectedItemId,
+    byCondition,
+    byCategory,
+    dominantCondition,
+    dominantCategory,
+  ])
+
+  // Event handlers
+  const handleRefresh = useCallback(() => {
+    refetch()
+  }, [refetch])
 
   return (
     <ProtectedRoute>
-      <div className="p-6 space-y-6">
-        <section className="border shadow-md bg-white p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-xl font-bold text-slate-800">
-                Laporan Indikator Mutu
-              </h1>
-              <p className="text-sm text-slate-600 mt-1">
-                Ringkasan Kepatuhan Pemeliharaan Rutin Aset (Visualisasi Admin)
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Date Filters */}
-              <div className="flex items-center gap-1">
-                <label className="text-xs font-semibold text-slate-500">
-                  Dari:
-                </label>
-                <input
+      <Box sx={{ p: { xs: 3, md: 6 }, maxWidth: '1200px', mx: 'auto' }}>
+        <Stack spacing={4}>
+          <Paper elevation={0} variant="outlined" sx={{ p: 4, borderRadius: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 4 }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <FileBarChart color="#3b82f6" size={32} />
+                <Box>
+                  <Typography variant="h5" fontWeight="bold">Laporan Indikator Mutu</Typography>
+                  <Typography variant="body2" color="text.secondary">Ringkasan Kepatuhan Pemeliharaan Rutin Aset</Typography>
+                </Box>
+              </Stack>
+              
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: { xs: '100%', md: 'auto' } }}>
+                <TextField
                   type="date"
+                  size="small"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="border px-2 py-1 text-sm rounded"
+                  sx={{ width: { xs: '100%', sm: 'auto' } }}
                 />
-              </div>
-              <div className="flex items-center gap-1">
-                <label className="text-xs font-semibold text-slate-500">
-                  Hingga:
-                </label>
-                <input
+                <TextField
                   type="date"
+                  size="small"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="border px-2 py-1 text-sm rounded"
+                  sx={{ width: { xs: '100%', sm: 'auto' } }}
                 />
-              </div>
-              {/* Item Dropdown */}
-              <select
-                value={selectedItemId || ''}
-                onChange={(e) => setSelectedItemId(e.target.value || undefined)}
-                className="border px-3 py-1.5 text-sm rounded"
-              >
-                <option value="">Semua Item</option>
-                {items.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="bg-slate-100 border px-3 py-1.5 text-sm hover:bg-slate-200"
-                onClick={() => refetch()}
-                disabled={isFetching}
-              >
-                {isFetching ? 'Memuat...' : 'Refresh'}
-              </button>
-            </div>
-          </div>
 
-          {isLoading ? (
-            <div className="p-12 text-center text-slate-500 font-mono animate-pulse">
-              Mengambil data statistik terbaru...
-            </div>
-          ) : error ? (
-            <div className="p-12 text-center text-red-500 font-mono">
-              Error: {error.message}
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="border border-slate-200 bg-slate-50 p-6 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-500 mb-2">
-                    Total Aktivitas
-                  </h3>
-                  <p className="text-5xl font-bold font-mono text-slate-800">
-                    {laporan.summary.totalActivities}
-                  </p>
-                  <div className="mt-2 text-xs text-slate-400">
-                    Seluruh log aktivitas sesuai filter yang dipilih
-                  </div>
-                </div>
+                <FormControl size="small" sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
+                  <InputLabel shrink>Filter Item</InputLabel>
+                  <Select
+                    value={selectedItemId || ''}
+                    label="Filter Item"
+                    onChange={(e) => setSelectedItemId(e.target.value || undefined)}
+                    displayEmpty
+                    notched
+                  >
+                    <MenuItem value="">Semua Item</MenuItem>
+                    {items.map((item) => (
+                      <MenuItem key={item.id} value={item.id}>
+                        {item.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
-                <div className="border border-slate-200 bg-slate-50 p-6 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-500 mb-2">
-                    Total Kategori
-                  </h3>
-                  <p className="text-5xl font-bold font-mono text-slate-800">
-                    {laporan.summary.uniqueCategories}
-                  </p>
-                  <div className="mt-2 text-xs text-slate-400">
-                    Jumlah kategori unik dari data aktivitas
-                  </div>
-                </div>
+                <IconButton onClick={handleRefresh} sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)' }}>
+                  <RefreshCw size={20} />
+                </IconButton>
+              </Box>
+            </Box>
 
-                <div className="border-2 border-blue-200 bg-blue-50 p-6 shadow-sm rounded-lg relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
-                  <h3 className="text-sm font-semibold text-blue-700 mb-2 relative z-10">
-                    {currentHighlightTitle}
-                  </h3>
-                  <p className="text-5xl font-bold font-mono text-blue-800 relative z-10">
-                    {currentHighlightValue}
-                  </p>
-                  <div className="mt-2 text-xs text-blue-500 font-semibold relative z-10">
-                    Aktivitas terbanyak pada breakdown saat ini
-                  </div>
-                </div>
-              </div>
+            <Box sx={{ mt: 6 }}>
+              {isLoading ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 10, gap: 2 }}>
+                  <CircularProgress size={48} />
+                  <Typography variant="body2" color="text.secondary" fontWeight="medium">Mengambil data statistik terbaru...</Typography>
+                </Box>
+              ) : error ? (
+                <Box sx={{ textAlign: 'center', py: 10 }}>
+                  <Typography variant="h6" color="error" fontWeight="bold">Error</Typography>
+                  <Typography variant="body2" color="text.secondary">{error.message}</Typography>
+                </Box>
+              ) : (
+                <Stack spacing={6}>
+                  {/* Stats Grid */}
+                  <Grid container spacing={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255, 255, 255, 0.01)' }}>
+                        <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Aktivitas</Typography>
+                        <Typography variant="h3" fontWeight="bold" sx={{ mt: 1 }}>{laporan.summary.totalActivities}</Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>Seluruh log aktivitas sesuai filter</Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255, 255, 255, 0.01)' }}>
+                        <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Kategori</Typography>
+                        <Typography variant="h3" fontWeight="bold" sx={{ mt: 1 }}>{laporan.summary.uniqueCategories}</Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>Jumlah kategori unik yang tercatat</Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'primary.soft', border: '1px solid', borderColor: 'primary.main' }}>
+                        <Typography variant="caption" fontWeight="bold" color="primary.main" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{currentHighlightTitle}</Typography>
+                        <Typography variant="h3" fontWeight="bold" color="primary.main" sx={{ mt: 1 }}>{currentHighlightValue}</Typography>
+                        <Typography variant="caption" color="primary.main" display="block" sx={{ mt: 1, fontWeight: 'medium' }}>Breakdown terbanyak saat ini</Typography>
+                      </Paper>
+                    </Grid>
+                  </Grid>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="border border-slate-200 bg-slate-50 p-6 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-4">
-                    {currentBreakdownTitle}
-                  </h3>
-                  {currentBreakdown.length === 0 ? (
-                    <p className="text-sm text-slate-500">
-                      Belum ada data breakdown
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {currentBreakdown.map((entry) => {
-                        const count =
-                          'condition' in entry ? entry.count : entry.count
-                        const label =
-                          'condition' in entry
-                            ? entry.condition
-                            : entry.categoryName
-                        const width = laporan.summary.totalActivities
-                          ? Math.round(
-                              (count / laporan.summary.totalActivities) * 100,
-                            )
-                          : 0
+                  <Grid container spacing={4}>
+                    {/* Breakdown Card */}
+                    <Grid size={{ xs: 12, lg: 6 }}>
+                      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', height: '100%' }}>
+                        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255, 255, 255, 0.02)' }}>
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Filter size={20} color="#3b82f6" />
+                            <Typography variant="subtitle1" fontWeight="bold">{currentBreakdownTitle}</Typography>
+                          </Stack>
+                        </Box>
+                        <Box sx={{ p: 3 }}>
+                          {currentBreakdown.length === 0 ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>Belum ada data breakdown</Typography>
+                          ) : (
+                            <BreakdownList
+                              data={currentBreakdown}
+                              totalActivities={laporan.summary.totalActivities}
+                            />
+                          )}
+                        </Box>
+                      </Paper>
+                    </Grid>
 
-                        return (
-                          <div key={label}>
-                            <div className="flex items-center justify-between text-sm mb-1">
-                              <span className="font-semibold text-slate-700">
-                                {label}
-                              </span>
-                              <span className="font-mono text-slate-500">
-                                {count}
-                              </span>
-                            </div>
-                            <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-                              <div
-                                className="h-2 rounded-full bg-blue-500 transition-all"
-                                style={{ width: `${width}%` }}
-                              />
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
+                    {/* Trend Card */}
+                    <Grid size={{ xs: 12, lg: 6 }}>
+                      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', height: '100%' }}>
+                        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255, 255, 255, 0.02)' }}>
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Calendar size={20} color="#3b82f6" />
+                            <Typography variant="subtitle1" fontWeight="bold">Tren Harian</Typography>
+                          </Stack>
+                        </Box>
+                        <Box sx={{ p: 0 }}>
+                          {trend.length === 0 ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 8 }}>Belum ada data tren</Typography>
+                          ) : (
+                            <TrendTable trend={trend} />
+                          )}
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  </Grid>
+
+                  {/* History Section for Selected Item */}
+                  {selectedItemId && (
+                    <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+                      <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255, 255, 255, 0.02)' }}>
+                        <Typography variant="subtitle1" fontWeight="bold">Riwayat Pemeriksaan Item</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {selectedItemName} - {history.length} riwayat ditemukan
+                        </Typography>
+                      </Box>
+                      <Box sx={{ p: 0 }}>
+                        {history.length === 0 ? (
+                          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 8 }}>Belum ada riwayat pemeriksaan untuk item ini</Typography>
+                        ) : (
+                          <HistoryTable history={history} />
+                        )}
+                      </Box>
+                    </Paper>
                   )}
-                </div>
-
-                <div className="border border-slate-200 bg-slate-50 p-6 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-4">
-                    Tren Harian
-                  </h3>
-                  {trend.length === 0 ? (
-                    <p className="text-sm text-slate-500">
-                      Belum ada data tren
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {trend.map((entry) => (
-                        <div
-                          key={entry.date}
-                          className="flex items-center justify-between text-sm border-b border-slate-200 pb-2"
-                        >
-                          <span className="text-slate-600">{entry.date}</span>
-                          <span className="font-mono font-semibold text-slate-800">
-                            {entry.count}
-                          </span>
-                        </div>
-                      ))}
-                      <div className="pt-2 text-xs text-slate-500">
-                        Terakhir diperbarui: {latestTrend?.date ?? '-'}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {selectedItemId ? (
-                <div className="border border-slate-200 bg-white p-6 shadow-sm mt-4">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">
-                    Riwayat Pemeriksaan Item
-                  </h3>
-                  <p className="text-xs text-slate-500 mb-4">
-                    {selectedItemName ?? 'Item terpilih'} - {history.length}{' '}
-                    riwayat
-                  </p>
-                  {history.length === 0 ? (
-                    <p className="text-sm text-slate-500">
-                      Belum ada riwayat pemeriksaan untuk item ini
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {history.map((entry) => (
-                        <div
-                          key={entry.id}
-                          className="border border-slate-200 rounded p-3 bg-slate-50"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="text-sm font-semibold text-slate-700">
-                              {entry.itemName}
-                            </div>
-                            <div className="text-xs font-mono text-slate-500">
-                              {formatCheckedAt(entry.checkedAt)}
-                            </div>
-                          </div>
-                          <div className="mt-2 text-sm text-slate-600">
-                            Kondisi:{' '}
-                            <span className="font-semibold">
-                              {entry.condition}
-                            </span>
-                          </div>
-                          <div className="mt-1 text-sm text-slate-500">
-                            Kategori: {entry.categoryName}
-                          </div>
-                          {entry.note ? (
-                            <div className="mt-1 text-sm text-slate-500">
-                              Catatan: {entry.note}
-                            </div>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : null}
-            </>
-          )}
-        </section>
-      </div>
+                </Stack>
+              )}
+            </Box>
+          </Paper>
+        </Stack>
+      </Box>
     </ProtectedRoute>
   )
 }

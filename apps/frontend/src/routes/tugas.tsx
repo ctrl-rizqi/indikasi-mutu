@@ -1,172 +1,316 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useTugasItemsQuery, useCreateActivityMutation } from '../hooks/tugas.activities'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { SubmitEvent } from 'react'
+import {
+  useTugasItemsQuery,
+  useCreateActivityMutation,
+} from '../hooks/tugas.activities'
 import { useAuthStore } from '../store/authStore'
 import ProtectedRoute from '../components/ProtectedRoute'
-import { Search, Check, X } from 'lucide-react'
+import { Search, ClipboardCheck, ChevronDown } from 'lucide-react'
+import type { Item } from '@repo/resource'
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  AlertTitle,
+  CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Paper,
+  Stack,
+  InputAdornment,
+} from '@mui/material'
 
 export const Route = createFileRoute('/tugas')({
   component: RouteComponent,
 })
 
-export default function RouteComponent() {
-  const user = useAuthStore((state) => state.user)
-  const { data: items = [], isLoading } = useTugasItemsQuery()
+const KONDISI_OPTIONS = [
+  { key: 'baik', label: 'Baik' },
+  { key: 'rusak', label: 'Rusak' },
+  { key: 'hilang', label: 'Hilang' },
+] as const
+
+const EMPTY_FORM = {
+  kondisi: '',
+  catatan: '',
+}
+
+type ActivityFormState = typeof EMPTY_FORM
+
+function ItemActivityForm({
+  itemId,
+  userId,
+}: {
+  itemId: string
+  userId?: string
+}) {
   const createActivityMutation = useCreateActivityMutation()
+  const [form, setForm] = useState<ActivityFormState>(EMPTY_FORM)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const [search, setSearch] = useState('')
-  const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
-  const [form, setForm] = useState({
-    kondisi: '',
-    catatan: '',
-  })
-  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null)
+  useEffect(() => {
+    if (!submitSuccess) return
 
-  const filteredItems = items.filter(
-    (item) =>
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.location.toLowerCase().includes(search.toLowerCase())
+    const timeoutId = setTimeout(() => {
+      setSubmitSuccess(false)
+    }, 3000)
+
+    return () => clearTimeout(timeoutId)
+  }, [submitSuccess])
+
+  const updateField = useCallback(
+    (field: keyof ActivityFormState, value: string) => {
+      setForm((prev) => ({ ...prev, [field]: value }))
+    },
+    [],
   )
 
-  const handleExpand = (itemId: string) => {
-    setExpandedItemId(itemId)
-    setForm({ kondisi: '', catatan: '' })
-    setSubmitSuccess(null)
-  }
+  const handleSubmit = useCallback(
+    async (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault()
 
-  const handleCollapse = () => {
-    setExpandedItemId(null)
-    setForm({ kondisi: '', catatan: '' })
-    setSubmitSuccess(null)
-  }
+      if (!userId) {
+        setSubmitError('Pengguna tidak ditemukan. Silakan login ulang.')
+        return
+      }
 
-  const handleSubmit = async (itemId: string, event: React.FormEvent) => {
-    event.preventDefault()
-    if (!user?.id || !form.kondisi) return
+      if (!form.kondisi) return
 
-    await createActivityMutation.mutateAsync({
-      itemId,
-      userId: user.id,
-      checklist: { kondisi: form.kondisi },
-      note: form.catatan || undefined,
-    })
+      setSubmitError(null)
 
-    setSubmitSuccess(itemId)
-    setForm({ kondisi: '', catatan: '' })
-    
-    // Auto collapse after 2 seconds
-    setTimeout(() => {
-      handleCollapse()
-    }, 2000)
+      try {
+        await createActivityMutation.mutateAsync({
+          itemId,
+          userId,
+          checklist: { kondisi: form.kondisi },
+          note: form.catatan || undefined,
+        })
+
+        setSubmitSuccess(true)
+        setForm(EMPTY_FORM)
+      } catch (error) {
+        console.error('Failed to create activity:', error)
+        setSubmitError('Aktivitas gagal disimpan. Silakan coba lagi.')
+      }
+    },
+    [createActivityMutation, form.catatan, form.kondisi, itemId, userId],
+  )
+
+  if (submitSuccess) {
+    return (
+      <Alert severity="success" sx={{ mb: 2 }}>
+        <AlertTitle>Berhasil!</AlertTitle>
+        Aktivitas berhasil disimpan.
+      </Alert>
+    )
   }
 
   return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-bold">Tugas / Aktivitas</h1>
+    <form onSubmit={handleSubmit}>
+      <Stack spacing={3}>
+        {submitError && (
+          <Alert severity="error">
+            <AlertTitle>Gagal</AlertTitle>
+            {submitError}
+          </Alert>
+        )}
 
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Cari item..."
+        <FormControl fullWidth required variant="outlined">
+          <InputLabel shrink>Kondisi</InputLabel>
+          <Select
+            value={form.kondisi}
+            label="Kondisi"
+            onChange={(e) => updateField('kondisi', e.target.value)}
+            displayEmpty
+            notched
+          >
+            <MenuItem value="" disabled>
+              Pilih Kondisi
+            </MenuItem>
+            {KONDISI_OPTIONS.map((option) => (
+              <MenuItem key={option.key} value={option.key}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <TextField
+          fullWidth
+          multiline
+          rows={3}
+          placeholder="Tambahkan catatan (opsional)..."
+          value={form.catatan}
+          onChange={(event) => updateField('catatan', event.target.value)}
+          variant="outlined"
+        />
+
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={!form.kondisi || createActivityMutation.isPending}
+            sx={{ px: 4, py: 1, fontWeight: 'bold', textTransform: 'none' }}
+          >
+            {createActivityMutation.isPending ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Simpan Aktivitas'
+            )}
+          </Button>
+        </Box>
+      </Stack>
+    </form>
+  )
+}
+
+function TugasItemAccordion({
+  items,
+  userId,
+}: {
+  items: Item[]
+  userId?: string
+}) {
+  return (
+    <Box>
+      {items.map((item) => (
+        <Accordion
+          key={item.id}
+          elevation={0}
+          variant="outlined"
+          sx={{
+            mb: 1,
+            borderRadius: '8px !important',
+            '&:before': { display: 'none' },
+            overflow: 'hidden',
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ChevronDown size={20} />}
+            sx={{
+              px: 2,
+              '&.Mui-expanded': {
+                minHeight: 64,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+              },
+            }}
+          >
+            <Box>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {item.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {item.location}
+              </Typography>
+            </Box>
+          </AccordionSummary>
+
+          <AccordionDetails sx={{ p: 3, bgcolor: 'rgba(255, 255, 255, 0.01)' }}>
+            <ItemActivityForm itemId={item.id} userId={userId} />
+          </AccordionDetails>
+        </Accordion>
+      ))}
+    </Box>
+  )
+}
+
+export default function RouteComponent() {
+  const userId = useAuthStore((state) => state.user?.id)
+  const { data: items = [], isLoading } = useTugasItemsQuery()
+  const [search, setSearch] = useState('')
+  const normalizedSearch = search.trim().toLowerCase()
+
+  const filteredItems = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(normalizedSearch) ||
+          item.location.toLowerCase().includes(normalizedSearch),
+      ),
+    [items, normalizedSearch],
+  )
+
+  return (
+    <ProtectedRoute>
+      <Box sx={{ p: { xs: 3, md: 6 }, maxWidth: '800px', mx: 'auto' }}>
+        <Stack spacing={4}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <ClipboardCheck color="#3b82f6" size={32} />
+            <Typography variant="h4" fontWeight="bold">
+              Tugas / Aktivitas
+            </Typography>
+          </Stack>
+
+          {/* Search Bar */}
+          <TextField
+            fullWidth
+            placeholder="Cari item berdasarkan nama atau lokasi..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg"
+            variant="outlined"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={20} color="rgba(255, 255, 255, 0.4)" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ bgcolor: 'background.paper', borderRadius: 2 }}
           />
-        </div>
 
-        {/* Loading State */}
-        {isLoading && <p className="text-gray-500">Memuat...</p>}
+          {/* Loading State */}
+          {isLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+              <CircularProgress size={48} />
+            </Box>
+          )}
 
-        {/* Item List */}
-        <div className="space-y-2">
-          {filteredItems.map((item) => (
-            <div key={item.id} className="bg-white rounded-lg shadow border">
-              {/* Item Row - Clickable */}
-              <div
-                onClick={() => handleExpand(item.id)}
-                className="p-4 cursor-pointer hover:bg-gray-50 flex items-center justify-between"
-              >
-                <div>
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-gray-600">{item.location}</p>
-                </div>
-                <div className="text-gray-400">
-                  {expandedItemId === item.id ? <X size={20} /> : <Check size={20} />}
-                </div>
-              </div>
+          {!isLoading && filteredItems.length > 0 && (
+            <TugasItemAccordion items={filteredItems} userId={userId} />
+          )}
 
-              {/* Expanded Form */}
-              {expandedItemId === item.id && (
-                <div className="px-4 pb-4 border-t">
-                  <form
-                    onSubmit={(e) => handleSubmit(item.id, e)}
-                    className="pt-4 space-y-4"
-                  >
-                    {/* Kondisi */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Kondisi</label>
-                      <select
-                        value={form.kondisi}
-                        onChange={(e) => setForm((prev) => ({ ...prev, kondisi: e.target.value }))}
-                        className="w-full p-2 border rounded"
-                        required
-                      >
-                        <option value="">-- Pilih Kondisi --</option>
-                        <option value="baik">Baik</option>
-                        <option value="rusak">Rusak</option>
-                        <option value="hilang">Hilang</option>
-                      </select>
-                    </div>
-
-                    {/* Catatan */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Catatan</label>
-                      <textarea
-                        value={form.catatan}
-                        onChange={(e) => setForm((prev) => ({ ...prev, catatan: e.target.value }))}
-                        className="w-full p-2 border rounded"
-                        rows={2}
-                        placeholder="Tambahkan catatan..."
-                      />
-                    </div>
-
-                    {/* Submit */}
-                    <div className="flex gap-2">
-                      <button
-                        type="submit"
-                        disabled={createActivityMutation.isPending || !form.kondisi}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {createActivityMutation.isPending ? 'Menyimpan...' : 'Simpan'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCollapse}
-                        className="px-4 py-2 border rounded hover:bg-gray-50"
-                      >
-                        Batal
-                      </button>
-                    </div>
-
-                    {/* Success Message */}
-                    {submitSuccess === item.id && (
-                      <p className="text-green-600 text-sm">✓ Aktivitas berhasil disimpan</p>
-                    )}
-                  </form>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {!isLoading && filteredItems.length === 0 && (
-          <p className="text-gray-500 text-center py-8">Item tidak ditemukan</p>
-        )}
-      </div>
+          {/* Empty State */}
+          {!isLoading && filteredItems.length === 0 && (
+            <Paper
+              variant="outlined"
+              sx={{
+                py: 12,
+                px: 4,
+                textAlign: 'center',
+                borderRadius: 4,
+                bgcolor: 'rgba(255, 255, 255, 0.02)',
+                borderStyle: 'dashed',
+                borderWidth: 2,
+              }}
+            >
+              <Stack spacing={2} alignItems="center">
+                <Search size={48} color="#94a3b8" />
+                <Box>
+                  <Typography variant="h6" fontWeight="bold">
+                    Item tidak ditemukan
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Coba gunakan kata kunci lain
+                  </Typography>
+                </Box>
+              </Stack>
+            </Paper>
+          )}
+        </Stack>
+      </Box>
     </ProtectedRoute>
   )
 }

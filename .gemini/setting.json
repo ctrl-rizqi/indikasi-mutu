@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "material-ui-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@mui/mcp@latest"]
+    }
+  }
+}

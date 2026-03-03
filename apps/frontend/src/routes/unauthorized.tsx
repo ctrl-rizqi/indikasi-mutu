@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link as RouterLink } from '@tanstack/react-router'
+import { Container, Paper, Box, Typography, Button } from '@mui/material'
+import { ShieldAlert } from 'lucide-react'
 
 export const Route = createFileRoute('/unauthorized')({
   component: UnauthorizedPage,
@@ -6,24 +8,45 @@ export const Route = createFileRoute('/unauthorized')({
 
 export default function UnauthorizedPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md text-center">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">403 Forbidden</h2>
-          <p className="mt-2 text-gray-600">
+    <Box 
+      sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        bgcolor: 'background.default',
+        p: 2 
+      }}
+    >
+      <Container maxWidth="xs">
+        <Paper elevation={3} sx={{ p: 6, borderRadius: 2, bgcolor: 'background.paper', textAlign: 'center' }}>
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+            <ShieldAlert size={64} color="#f87171" />
+          </Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom color="white">
+            403 Forbidden
+          </Typography>
+          <Typography variant="body1" color="rgba(255, 255, 255, 0.6)" sx={{ mb: 4 }}>
             You don't have permission to access this page.
-          </p>
-        </div>
+          </Typography>
 
-        <div className="mt-6">
-          <Link
+          <Button
+            component={RouterLink}
             to="/dashboard"
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            variant="contained"
+            sx={{ 
+              px: 4, 
+              py: 1.2, 
+              bgcolor: 'primary.main', 
+              '&:hover': { bgcolor: 'primary.dark' },
+              textTransform: 'none',
+              fontWeight: 'bold'
+            }}
           >
             Return to Dashboard
-          </Link>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </Paper>
+      </Container>
+    </Box>
   )
 }
