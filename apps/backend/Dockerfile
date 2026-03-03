@@ -35,14 +35,13 @@ COPY --from=build /usr/src/app/apps/backend/dist ./apps/backend/dist
 COPY --from=build /usr/src/app/apps/backend/prisma ./apps/backend/prisma
 COPY --from=build /usr/src/app/packages/resource ./packages/resource
 
-# Install only production dependencies
 # bcrypt and other native modules need to be rebuilt for the runtime image
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
-    && pnpm install --prod --frozen-lockfile \
+    && pnpm install --frozen-lockfile --filter @repo/backend... \
     && apt-get purge -y python3 make g++ \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
