@@ -29,6 +29,9 @@ out/
 .vercel
 .next
 .nuxt
+.kilocode
+.gemini
+
 
 # Vite & React
 dist-ssr/
@@ -36,6 +39,8 @@ dist-ssr/
 
 # TanStack Start / Router caches
 .tanstack
+
+opencode.jsonc
 
 # Env files
 .env
