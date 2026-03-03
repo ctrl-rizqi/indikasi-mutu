@@ -33,18 +33,14 @@ async function getLaporanData(itemId?: string, startDate?: string, endDate?: str
   const uniqueItems = new Set(activities.map((a) => a.itemId)).size;
   const uniqueCategories = new Set(activities.map((a) => a.item.categoryId)).size;
 
-  const categoryMap: Record<string, { id: string; name: string; count: number }> = {};
+  const categoryMap: Record<string, { id: string; name: string; count: number; enumerator: number; denumerator: number }> = {};
   const conditionMap: Record<string, number> = {};
-  const trendMap: Record<string, number> = {};
+  const trendMap: Record<string, { count: number; enumerator: number; denumerator: number }> = {};
 
-  activities.forEach((a) => {
-    // Category Breakdown
-    const cat = a.item.category;
-    if (!categoryMap[cat.id]) {
-      categoryMap[cat.id] = { id: cat.id, name: cat.name, count: 0 };
-    }
-    categoryMap[cat.id].count++;
+  let totalEnumerator = 0;
+  let totalDenumerator = 0;
 
+  const history = activities.map((a) => {
     // Condition Breakdown (Extracting from Json checklist)
     const checklist = a.checklist as any;
     // Try common keys for condition, default to "Normal"
@@ -52,16 +48,59 @@ async function getLaporanData(itemId?: string, startDate?: string, endDate?: str
       checklist.kondisi ||
       checklist.status ||
       (checklist.baik === true ? "Baik" : checklist.baik === false ? "Rusak" : "Normal");
+    
+    // Logic for enumerator (numerator) and denumerator (denominator)
+    // numerator: meets standard/good condition
+    // denominator: total checked
+    const isCompliant = 
+      checklist.baik === true || 
+      ["Baik", "Normal", "Active", "Sesuai", "Lengkap"].includes(condition);
+    
+    const enumerator = isCompliant ? 1 : 0;
+    const denumerator = 1;
+
+    totalEnumerator += enumerator;
+    totalDenumerator += denumerator;
+
+    // Category Breakdown
+    const cat = a.item.category;
+    if (!categoryMap[cat.id]) {
+      categoryMap[cat.id] = { id: cat.id, name: cat.name, count: 0, enumerator: 0, denumerator: 0 };
+    }
+    categoryMap[cat.id].count++;
+    categoryMap[cat.id].enumerator += enumerator;
+    categoryMap[cat.id].denumerator += denumerator;
+
+    // Condition Map
     conditionMap[condition] = (conditionMap[condition] || 0) + 1;
 
     // Daily Trend
     const date = a.createdAt.toISOString().split("T")[0];
-    trendMap[date] = (trendMap[date] || 0) + 1;
+    if (!trendMap[date]) {
+      trendMap[date] = { count: 0, enumerator: 0, denumerator: 0 };
+    }
+    trendMap[date].count++;
+    trendMap[date].enumerator += enumerator;
+    trendMap[date].denumerator += denumerator;
+
+    return {
+      id: a.id,
+      itemId: a.itemId,
+      itemName: a.item.name,
+      categoryName: a.item.category.name,
+      checkedAt: a.createdAt.toISOString(),
+      condition,
+      isCompliant,
+      enumerator,
+      denumerator,
+      note: a.note || null,
+      photo: a.photo || null,
+    };
   });
 
   return {
     meta: {
-      contractVersion: 2,
+      contractVersion: 3,
       generatedAt: new Date().toISOString(),
       filters: { itemId: itemId || null },
     },
@@ -69,12 +108,18 @@ async function getLaporanData(itemId?: string, startDate?: string, endDate?: str
       totalActivities,
       uniqueItems,
       uniqueCategories,
+      enumerator: totalEnumerator,
+      denumerator: totalDenumerator,
+      complianceRate: totalDenumerator > 0 ? (totalEnumerator / totalDenumerator) * 100 : 0,
     },
     breakdowns: {
       byCategory: Object.values(categoryMap).map((c) => ({
         categoryId: c.id,
         categoryName: c.name,
         count: c.count,
+        enumerator: c.enumerator,
+        denumerator: c.denumerator,
+        percentage: c.denumerator > 0 ? (c.enumerator / c.denumerator) * 100 : 0,
       })),
       byCondition: Object.entries(conditionMap).map(([condition, count]) => ({
         condition,
@@ -83,23 +128,16 @@ async function getLaporanData(itemId?: string, startDate?: string, endDate?: str
     },
     trend: {
       daily: Object.entries(trendMap)
-        .map(([date, count]) => ({
+        .map(([date, data]) => ({
           date,
-          count,
+          count: data.count,
+          enumerator: data.enumerator,
+          denumerator: data.denumerator,
+          percentage: data.denumerator > 0 ? (data.enumerator / data.denumerator) * 100 : 0,
         }))
         .sort((a, b) => a.date.localeCompare(b.date)),
     },
-    history: activities.map((a) => ({
-      id: a.id,
-      itemId: a.itemId,
-      itemName: a.item.name,
-      categoryName: a.item.category.name,
-      checkedAt: a.createdAt.toISOString(),
-      condition:
-        (a.checklist as any).kondisi || (a.checklist as any).status || "Normal",
-      note: a.note || null,
-      photo: a.photo || null,
-    })),
+    history,
   };
 }
 

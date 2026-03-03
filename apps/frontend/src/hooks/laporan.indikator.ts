@@ -3,7 +3,7 @@ import { authenticatedFetch } from '../lib/api-client'
 
 export type LaporanApiResponse = {
   meta: {
-    contractVersion: 2
+    contractVersion: number
     generatedAt: string
     filters: {
       itemId: string | null
@@ -13,12 +13,18 @@ export type LaporanApiResponse = {
     totalActivities: number
     uniqueItems: number
     uniqueCategories: number
+    enumerator: number
+    denumerator: number
+    complianceRate: number
   }
   breakdowns: {
     byCategory: {
       categoryId: string
       categoryName: string
       count: number
+      enumerator: number
+      denumerator: number
+      percentage: number
     }[]
     byCondition: {
       condition: string
@@ -29,6 +35,9 @@ export type LaporanApiResponse = {
     daily: {
       date: string
       count: number
+      enumerator: number
+      denumerator: number
+      percentage: number
     }[]
   }
   history: {
@@ -38,6 +47,9 @@ export type LaporanApiResponse = {
     categoryName: string
     checkedAt: string
     condition: string
+    isCompliant: boolean
+    enumerator: number
+    denumerator: number
     note: string | null
     photo: string | null
   }[]
@@ -50,7 +62,7 @@ const fetchLaporan = async (
   startDate?: string,
   endDate?: string,
 ): Promise<LaporanApiResponse> => {
-  const params = new URLSearchParams({ v: '2' })
+  const params = new URLSearchParams({ v: '3' })
 
   if (itemId) {
     params.set('itemId', itemId)
@@ -70,39 +82,23 @@ const fetchLaporan = async (
     throw new Error('Gagal mengambil data laporan')
   }
 
-  const payload = (await response.json()) as Partial<LaporanApiResponse>
-
-  const generatedAt =
-    typeof payload.meta?.generatedAt === 'string'
-      ? payload.meta.generatedAt
-      : new Date(0).toISOString()
-
-  const filterItemId =
-    typeof payload.meta?.filters?.itemId === 'string'
-      ? payload.meta.filters.itemId
-      : null
+  const payload = (await response.json()) as any
 
   return {
     meta: {
-      contractVersion: 2,
-      generatedAt,
+      contractVersion: payload.meta?.contractVersion || 3,
+      generatedAt: payload.meta?.generatedAt || new Date(0).toISOString(),
       filters: {
-        itemId: filterItemId,
+        itemId: payload.meta?.filters?.itemId || null,
       },
     },
     summary: {
-      totalActivities:
-        typeof payload.summary?.totalActivities === 'number'
-          ? payload.summary.totalActivities
-          : 0,
-      uniqueItems:
-        typeof payload.summary?.uniqueItems === 'number'
-          ? payload.summary.uniqueItems
-          : 0,
-      uniqueCategories:
-        typeof payload.summary?.uniqueCategories === 'number'
-          ? payload.summary.uniqueCategories
-          : 0,
+      totalActivities: payload.summary?.totalActivities || 0,
+      uniqueItems: payload.summary?.uniqueItems || 0,
+      uniqueCategories: payload.summary?.uniqueCategories || 0,
+      enumerator: payload.summary?.enumerator || 0,
+      denumerator: payload.summary?.denumerator || 0,
+      complianceRate: payload.summary?.complianceRate || 0,
     },
     breakdowns: {
       byCategory: Array.isArray(payload.breakdowns?.byCategory)
@@ -127,6 +123,6 @@ export const useLaporanIndikatorQuery = (
   return useQuery({
     queryKey: [...LAPORAN_QUERY_KEY, itemId, startDate, endDate] as const,
     queryFn: () => fetchLaporan(itemId, startDate, endDate),
-    staleTime: 0, // Always fetch fresh data when filters change
+    staleTime: 0,
   })
 }

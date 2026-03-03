@@ -1,5 +1,3 @@
-
-
 services:
   mysql:
     image: mysql:8.0
@@ -22,9 +20,39 @@ services:
     networks:
       - indikator-mutu-network
 
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: indikator-mutu-backend
+    environment:
+      - DATABASE_URL=mysql://myuser:mypassword@mysql:3306/indikator_mutu
+      - JWT_SECRET=your_jwt_secret_here
+      - PORT=5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - indikator-mutu-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5000/api
+    container_name: indikator-mutu-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - indikator-mutu-network
+
 volumes:
   mysql_data:
-
 
 networks:
   indikator-mutu-network:

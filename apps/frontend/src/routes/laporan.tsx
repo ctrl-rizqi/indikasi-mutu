@@ -45,6 +45,9 @@ const DEFAULT_LAPORAN: LaporanApiResponse = {
     totalActivities: 0,
     uniqueItems: 0,
     uniqueCategories: 0,
+    enumerator: 0,
+    denumerator: 0,
+    complianceRate: 0,
   },
   breakdowns: {
     byCategory: [],
@@ -88,7 +91,9 @@ function TrendTable({
           {trend.map((entry) => (
             <TableRow key={entry.date} hover>
               <TableCell>{entry.date}</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{entry.count}</TableCell>
+              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+                {entry.count}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -132,7 +137,9 @@ function HistoryTable({ history }: { history: HistoryEntry[] }) {
                 />
               </TableCell>
               <TableCell>{entry.categoryName}</TableCell>
-              <TableCell sx={{ fontSize: '0.75rem', fontStyle: 'italic' }}>{entry.note ?? '-'}</TableCell>
+              <TableCell sx={{ fontSize: '0.75rem', fontStyle: 'italic' }}>
+                {entry.note ?? '-'}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -168,16 +175,30 @@ function BreakdownList({
 
         return (
           <Box key={label}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-              <Typography variant="body2" fontWeight="bold">{label}</Typography>
-              <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mb: 1 }}
+            >
+              <Typography variant="body2" fontWeight="bold">
+                {label}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ fontFamily: 'monospace', color: 'text.secondary' }}
+              >
                 {entry.count} ({percentageDisplay}%)
               </Typography>
             </Stack>
-            <LinearProgress 
-              variant="determinate" 
-              value={Math.min(percentageValue, 100)} 
-              sx={{ height: 8, borderRadius: 4, bgcolor: 'rgba(255, 255, 255, 0.05)' }}
+            <LinearProgress
+              variant="determinate"
+              value={Math.min(percentageValue, 100)}
+              sx={{
+                height: 8,
+                borderRadius: 4,
+                bgcolor: 'rgba(255, 255, 255, 0.05)',
+              }}
             />
           </Box>
         )
@@ -276,17 +297,40 @@ export default function RouteComponent() {
     <ProtectedRoute>
       <Box sx={{ p: { xs: 3, md: 6 }, maxWidth: '1200px', mx: 'auto' }}>
         <Stack spacing={4}>
-          <Paper elevation={0} variant="outlined" sx={{ p: 4, borderRadius: 3 }}>
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 4 }}>
+          <Paper
+            elevation={0}
+            variant="outlined"
+            sx={{ p: 4, borderRadius: 3 }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                justifyContent: 'space-between',
+                alignItems: { xs: 'flex-start', md: 'center' },
+                gap: 4,
+              }}
+            >
               <Stack direction="row" spacing={2} alignItems="center">
                 <FileBarChart color="#3b82f6" size={32} />
                 <Box>
-                  <Typography variant="h5" fontWeight="bold">Laporan Indikator Mutu</Typography>
-                  <Typography variant="body2" color="text.secondary">Ringkasan Kepatuhan Pemeliharaan Rutin Aset</Typography>
+                  <Typography variant="h5" fontWeight="bold">
+                    Laporan Indikator Mutu
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Ringkasan Kepatuhan Pemeliharaan Rutin Aset
+                  </Typography>
                 </Box>
               </Stack>
-              
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: { xs: '100%', md: 'auto' } }}>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 2,
+                  width: { xs: '100%', md: 'auto' },
+                }}
+              >
                 <TextField
                   type="date"
                   size="small"
@@ -302,12 +346,17 @@ export default function RouteComponent() {
                   sx={{ width: { xs: '100%', sm: 'auto' } }}
                 />
 
-                <FormControl size="small" sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
+                <FormControl
+                  size="small"
+                  sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}
+                >
                   <InputLabel shrink>Filter Item</InputLabel>
                   <Select
                     value={selectedItemId || ''}
                     label="Filter Item"
-                    onChange={(e) => setSelectedItemId(e.target.value || undefined)}
+                    onChange={(e) =>
+                      setSelectedItemId(e.target.value || undefined)
+                    }
                     displayEmpty
                     notched
                   >
@@ -320,7 +369,10 @@ export default function RouteComponent() {
                   </Select>
                 </FormControl>
 
-                <IconButton onClick={handleRefresh} sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)' }}>
+                <IconButton
+                  onClick={handleRefresh}
+                  sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)' }}
+                >
                   <RefreshCw size={20} />
                 </IconButton>
               </Box>
@@ -328,38 +380,149 @@ export default function RouteComponent() {
 
             <Box sx={{ mt: 6 }}>
               {isLoading ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 10, gap: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    py: 10,
+                    gap: 2,
+                  }}
+                >
                   <CircularProgress size={48} />
-                  <Typography variant="body2" color="text.secondary" fontWeight="medium">Mengambil data statistik terbaru...</Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    fontWeight="medium"
+                  >
+                    Mengambil data statistik terbaru...
+                  </Typography>
                 </Box>
               ) : error ? (
                 <Box sx={{ textAlign: 'center', py: 10 }}>
-                  <Typography variant="h6" color="error" fontWeight="bold">Error</Typography>
-                  <Typography variant="body2" color="text.secondary">{error.message}</Typography>
+                  <Typography variant="h6" color="error" fontWeight="bold">
+                    Error
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {error.message}
+                  </Typography>
                 </Box>
               ) : (
                 <Stack spacing={6}>
                   {/* Stats Grid */}
                   <Grid container spacing={4}>
                     <Grid size={{ xs: 12, md: 4 }}>
-                      <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255, 255, 255, 0.01)' }}>
-                        <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Aktivitas</Typography>
-                        <Typography variant="h3" fontWeight="bold" sx={{ mt: 1 }}>{laporan.summary.totalActivities}</Typography>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>Seluruh log aktivitas sesuai filter</Typography>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 3,
+                          borderRadius: 3,
+                          bgcolor: 'rgba(255, 255, 255, 0.01)',
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          fontWeight="bold"
+                          color="text.secondary"
+                          sx={{
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                          }}
+                        >
+                          Enumerator
+                        </Typography>
+                        <Typography
+                          variant="h3"
+                          fontWeight="bold"
+                          sx={{ mt: 1 }}
+                        >
+                          {laporan.summary.totalActivities}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          sx={{ mt: 1 }}
+                        >
+                          Seluruh log aktivitas sesuai filter
+                        </Typography>
                       </Paper>
                     </Grid>
                     <Grid size={{ xs: 12, md: 4 }}>
-                      <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255, 255, 255, 0.01)' }}>
-                        <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Kategori</Typography>
-                        <Typography variant="h3" fontWeight="bold" sx={{ mt: 1 }}>{laporan.summary.uniqueCategories}</Typography>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>Jumlah kategori unik yang tercatat</Typography>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 3,
+                          borderRadius: 3,
+                          bgcolor: 'rgba(255, 255, 255, 0.01)',
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          fontWeight="bold"
+                          color="text.secondary"
+                          sx={{
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                          }}
+                        >
+                          Denumerator
+                        </Typography>
+                        <Typography
+                          variant="h3"
+                          fontWeight="bold"
+                          sx={{ mt: 1 }}
+                        >
+                          {laporan.summary.uniqueCategories}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          sx={{ mt: 1 }}
+                        >
+                          Jumlah kategori unik yang tercatat
+                        </Typography>
                       </Paper>
                     </Grid>
                     <Grid size={{ xs: 12, md: 4 }}>
-                      <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'primary.soft', border: '1px solid', borderColor: 'primary.main' }}>
-                        <Typography variant="caption" fontWeight="bold" color="primary.main" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{currentHighlightTitle}</Typography>
-                        <Typography variant="h3" fontWeight="bold" color="primary.main" sx={{ mt: 1 }}>{currentHighlightValue}</Typography>
-                        <Typography variant="caption" color="primary.main" display="block" sx={{ mt: 1, fontWeight: 'medium' }}>Breakdown terbanyak saat ini</Typography>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 3,
+                          borderRadius: 3,
+                          bgcolor: 'primary.soft',
+                          border: '1px solid',
+                          borderColor: 'primary.main',
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          fontWeight="bold"
+                          color="primary.main"
+                          sx={{
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                          }}
+                        >
+                          {currentHighlightTitle}
+                        </Typography>
+                        <Typography
+                          variant="h3"
+                          fontWeight="bold"
+                          color="primary.main"
+                          sx={{ mt: 1 }}
+                        >
+                          {currentHighlightValue}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="primary.main"
+                          display="block"
+                          sx={{ mt: 1, fontWeight: 'medium' }}
+                        >
+                          Breakdown terbanyak saat ini
+                        </Typography>
                       </Paper>
                     </Grid>
                   </Grid>
@@ -367,16 +530,42 @@ export default function RouteComponent() {
                   <Grid container spacing={4}>
                     {/* Breakdown Card */}
                     <Grid size={{ xs: 12, lg: 6 }}>
-                      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', height: '100%' }}>
-                        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255, 255, 255, 0.02)' }}>
-                          <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 3,
+                          overflow: 'hidden',
+                          height: '100%',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            p: 3,
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                            bgcolor: 'rgba(255, 255, 255, 0.02)',
+                          }}
+                        >
+                          <Stack
+                            direction="row"
+                            spacing={1.5}
+                            alignItems="center"
+                          >
                             <Filter size={20} color="#3b82f6" />
-                            <Typography variant="subtitle1" fontWeight="bold">{currentBreakdownTitle}</Typography>
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              {currentBreakdownTitle}
+                            </Typography>
                           </Stack>
                         </Box>
                         <Box sx={{ p: 3 }}>
                           {currentBreakdown.length === 0 ? (
-                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>Belum ada data breakdown</Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ textAlign: 'center', py: 4 }}
+                            >
+                              Belum ada data breakdown
+                            </Typography>
                           ) : (
                             <BreakdownList
                               data={currentBreakdown}
@@ -389,16 +578,42 @@ export default function RouteComponent() {
 
                     {/* Trend Card */}
                     <Grid size={{ xs: 12, lg: 6 }}>
-                      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', height: '100%' }}>
-                        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255, 255, 255, 0.02)' }}>
-                          <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 3,
+                          overflow: 'hidden',
+                          height: '100%',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            p: 3,
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                            bgcolor: 'rgba(255, 255, 255, 0.02)',
+                          }}
+                        >
+                          <Stack
+                            direction="row"
+                            spacing={1.5}
+                            alignItems="center"
+                          >
                             <Calendar size={20} color="#3b82f6" />
-                            <Typography variant="subtitle1" fontWeight="bold">Tren Harian</Typography>
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              Tren Harian
+                            </Typography>
                           </Stack>
                         </Box>
                         <Box sx={{ p: 0 }}>
                           {trend.length === 0 ? (
-                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 8 }}>Belum ada data tren</Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ textAlign: 'center', py: 8 }}
+                            >
+                              Belum ada data tren
+                            </Typography>
                           ) : (
                             <TrendTable trend={trend} />
                           )}
@@ -409,16 +624,35 @@ export default function RouteComponent() {
 
                   {/* History Section for Selected Item */}
                   {selectedItemId && (
-                    <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-                      <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255, 255, 255, 0.02)' }}>
-                        <Typography variant="subtitle1" fontWeight="bold">Riwayat Pemeriksaan Item</Typography>
+                    <Paper
+                      variant="outlined"
+                      sx={{ borderRadius: 3, overflow: 'hidden' }}
+                    >
+                      <Box
+                        sx={{
+                          p: 3,
+                          borderBottom: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: 'rgba(255, 255, 255, 0.02)',
+                        }}
+                      >
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          Riwayat Pemeriksaan Item
+                        </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {selectedItemName} - {history.length} riwayat ditemukan
+                          {selectedItemName} - {history.length} riwayat
+                          ditemukan
                         </Typography>
                       </Box>
                       <Box sx={{ p: 0 }}>
                         {history.length === 0 ? (
-                          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 8 }}>Belum ada riwayat pemeriksaan untuk item ini</Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ textAlign: 'center', py: 8 }}
+                          >
+                            Belum ada riwayat pemeriksaan untuk item ini
+                          </Typography>
                         ) : (
                           <HistoryTable history={history} />
                         )}
