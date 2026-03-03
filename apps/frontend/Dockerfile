@@ -32,8 +32,8 @@ RUN corepack enable
 
 WORKDIR /usr/src/app/apps/frontend
 COPY --from=build /usr/src/app/pruned-frontend ./
-# TanStack Start outputs to .output/ by default
-COPY --from=build /usr/src/app/apps/frontend/.output ./.output/
+# Copy from the dist folder as requested
+COPY --from=build /usr/src/app/apps/frontend/dist ./dist/
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
