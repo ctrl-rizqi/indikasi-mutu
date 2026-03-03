@@ -32,11 +32,12 @@ RUN corepack enable
 
 WORKDIR /usr/src/app/apps/frontend
 COPY --from=build /usr/src/app/pruned-frontend ./
-COPY --from=build /usr/src/app/apps/frontend/dist ./dist
+# TanStack Start outputs to .output/ by default
+COPY --from=build /usr/src/app/apps/frontend/.output ./.output/
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
 
 EXPOSE 3000
-CMD ["node", "dist/server/server.js"]
+CMD ["pnpm", "start"]
