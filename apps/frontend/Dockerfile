@@ -10,31 +10,42 @@ FROM base AS build
 ARG VITE_API_URL=http://localhost:5000/api
 ENV VITE_API_URL=$VITE_API_URL
 
-COPY . /usr/src/app
 WORKDIR /usr/src/app
 
-# Install semua dependencies workspace
+# Salin file workspace root terlebih dahulu
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY packages/ ./packages/
+
+# Salin frontend package
+COPY apps/frontend/ ./apps/frontend/
+
+# Install semua dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build frontend beserta workspace dependencies-nya
-RUN pnpm --filter frontend run build
-
-# Prune hanya yang dibutuhkan untuk production
-RUN pnpm --filter frontend deploy --legacy /usr/src/app/pruned
+# Build frontend
+WORKDIR /usr/src/app/apps/frontend
+RUN pnpm run build
 
 # ─── Stage 3: Runtime ─────────────────────────────────────────────────────────
 FROM base AS runtime
 
 WORKDIR /usr/src/app
 
-# Salin hasil pruned (node_modules + dist) dari stage build
-COPY --from=build /usr/src/app/pruned ./
+# Salin package.json workspace untuk pnpm install --prod
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY packages/ ./packages/
+COPY apps/frontend/package.json ./apps/frontend/package.json
 
-# Salin hasil build dist
-COPY --from=build /usr/src/app/apps/frontend/dist ./dist
+# Install hanya production dependencies
+RUN pnpm install --frozen-lockfile --prod
+
+# Salin hasil build
+COPY --from=build /usr/src/app/apps/frontend/dist ./apps/frontend/dist
 
 ENV NODE_ENV=production
 ENV PORT=3000
+
+WORKDIR /usr/src/app/apps/frontend
 
 EXPOSE 3000
 
