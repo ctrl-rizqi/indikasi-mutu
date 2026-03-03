@@ -21,7 +21,7 @@ RUN pnpm db:generate
 
 # Build the backend and its workspace dependencies
 WORKDIR /usr/src/app
-RUN pnpm run build --filter @repo/backend...
+RUN pnpm --filter @repo/backend run build
 
 FROM base AS runtime
 WORKDIR /usr/src/app

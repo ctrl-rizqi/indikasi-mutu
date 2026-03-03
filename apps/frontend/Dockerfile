@@ -21,7 +21,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
-RUN pnpm run build --filter frontend...
+RUN pnpm --filter frontend run build
 
 # Runtime stage (Nginx)
 FROM nginx:alpine AS runtime
