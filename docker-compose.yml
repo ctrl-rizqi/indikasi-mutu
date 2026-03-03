@@ -45,7 +45,7 @@ services:
         - VITE_API_URL=http://localhost:5000/api
     container_name: indikator-mutu-frontend
     ports:
-      - "3000:80"
+      - "3000:3000"
     depends_on:
       - backend
     networks:
