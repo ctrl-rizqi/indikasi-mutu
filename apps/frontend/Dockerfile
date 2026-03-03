@@ -39,8 +39,9 @@ COPY apps/frontend/package.json ./apps/frontend/package.json
 # Install hanya production dependencies
 RUN pnpm install --frozen-lockfile --prod
 
-# Salin hasil build
+# Salin hasil build dan server adapter
 COPY --from=build /usr/src/app/apps/frontend/dist ./apps/frontend/dist
+COPY apps/frontend/server.mjs ./apps/frontend/server.mjs
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -49,4 +50,4 @@ WORKDIR /usr/src/app/apps/frontend
 
 EXPOSE 3000
 
-CMD ["node", "dist/server/server.js"]
+CMD ["node", "server.mjs"]
