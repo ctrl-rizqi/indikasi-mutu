@@ -23,6 +23,9 @@ importers:
       '@prisma/client':
         specifier: ^7.4.1
         version: 7.4.1(prisma@7.4.1(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+      '@prisma/config':
+        specifier: ^7.4.1
+        version: 7.4.1
       '@repo/resource':
         specifier: workspace:*
         version: link:../../packages/resource
@@ -41,13 +44,13 @@ importers:
       mariadb:
         specifier: ^3.5.1
         version: 3.5.1(@types/geojson@7946.0.16)(@types/node@25.3.2)
+      prisma:
+        specifier: ^7.4.1
+        version: 7.4.1(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@prisma/config':
-        specifier: ^7.4.1
-        version: 7.4.1
       '@types/bcrypt':
         specifier: ^6.0.0
         version: 6.0.0
@@ -60,9 +63,6 @@ importers:
       nodemon:
         specifier: ^3.1.14
         version: 3.1.14
-      prisma:
-        specifier: ^7.4.1
-        version: 7.4.1(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@25.3.2)(typescript@5.9.3)

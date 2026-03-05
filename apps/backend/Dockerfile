@@ -52,7 +52,9 @@ WORKDIR /usr/src/app/apps/backend
 COPY --from=build /usr/src/app/pruned ./
 COPY --from=build /usr/src/app/apps/backend/prisma ./prisma
 COPY --from=build /usr/src/app/apps/backend/src/generated ./src/generated
+COPY --from=build /usr/src/app/apps/backend/prisma.config.ts ./
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "pnpm db:push && node dist/index.js"]
+# Using npx to ensure we find the prisma binary in the pruned node_modules
+CMD ["sh", "-c", "npx prisma db push --config prisma.config.ts && node dist/index.js"]
