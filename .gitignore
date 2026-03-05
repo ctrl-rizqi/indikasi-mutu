@@ -40,6 +40,8 @@ dist-ssr/
 # TanStack Start / Router caches
 .tanstack
 
+# AGENT
+.kilocodemodes
 opencode.jsonc
 
 # Env files

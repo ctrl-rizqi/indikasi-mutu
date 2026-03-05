@@ -1,16 +1,57 @@
+import React, { Suspense, useEffect, useState } from 'react'
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import Header from '../components/Header'
 
 import TanStackQueryProvider from '../integrations/tanstack-query/root-provider'
 import { useAuthStore } from '../store/authStore'
-import { useEffect } from 'react'
-
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import type { QueryClient } from '@tanstack/react-query'
+
+const TanStackDevtools = import.meta.env.PROD
+  ? () => null
+  : React.lazy(() =>
+      import('@tanstack/react-devtools').then((res) => ({
+        default: res.TanStackDevtools,
+      })),
+    )
+
+const TanStackRouterDevtoolsPanel = import.meta.env.PROD
+  ? () => null
+  : React.lazy(() =>
+      import('@tanstack/react-router-devtools').then((res) => ({
+        default: res.TanStackRouterDevtoolsPanel,
+      })),
+    )
+
+function DevtoolsWithPlugins() {
+  const [queryDevtools, setQueryDevtools] = useState<any>(null)
+
+  useEffect(() => {
+    if (!import.meta.env.PROD) {
+      import('../integrations/tanstack-query/devtools').then((res) => {
+        setQueryDevtools(res.default)
+      })
+    }
+  }, [])
+
+  return (
+    <Suspense fallback={null}>
+      <TanStackDevtools
+        config={{
+          position: 'bottom-right',
+        }}
+        plugins={[
+          {
+            name: 'Tanstack Router',
+            render: <TanStackRouterDevtoolsPanel />,
+          },
+          queryDevtools,
+        ].filter(Boolean)}
+      />
+    </Suspense>
+  )
+}
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -49,18 +90,7 @@ function RootLayout() {
           <Outlet />
         </main>
       </div>
-      <TanStackDevtools
-        config={{
-          position: 'bottom-right',
-        }}
-        plugins={[
-          {
-            name: 'Tanstack Router',
-            render: <TanStackRouterDevtoolsPanel />,
-          },
-          TanStackQueryDevtools,
-        ]}
-      />
+      {!import.meta.env.PROD && <DevtoolsWithPlugins />}
     </TanStackQueryProvider>
   )
 }
