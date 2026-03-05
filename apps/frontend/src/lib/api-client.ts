@@ -3,7 +3,7 @@ import { authAPI } from './auth'
 import { useAuthStore } from '../store/authStore'
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api'
+  import.meta.env.VITE_API_URL ?? 'http://192.168.24.177:5000/api'
 
 /**
  * Authenticated fetch wrapper that:
@@ -13,7 +13,7 @@ const API_BASE_URL =
  */
 export async function authenticatedFetch(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<Response> {
   // Get token from cookie
   const token = Cookies.get('auth_token')

@@ -45,7 +45,7 @@ services:
         # URL ini harus bisa diakses oleh browser user (bukan hostname Docker internal).
         # Ganti dengan IP server atau domain jika deploy ke server:
         # contoh: VITE_API_URL=http://192.168.1.100:5000/api
-        - VITE_API_URL=http://localhost:5000/api
+        - VITE_API_URL=http://192.168.24.117:5000/api
     container_name: indikator-mutu-frontend
     ports:
       - "3000:3000"
