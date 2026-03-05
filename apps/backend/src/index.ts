@@ -21,7 +21,31 @@ if (missingEnvVars.length > 0) {
 }
 const app = new Hono()
 
-app.use('/api/*', cors())
+const configuredOrigins = (process.env.CORS_ORIGINS ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0)
+
+app.use(
+  '/api/*',
+  cors({
+    origin: (origin) => {
+      if (!origin) {
+        return '*'
+      }
+
+      if (configuredOrigins.length === 0) {
+        return origin
+      }
+
+      return configuredOrigins.includes(origin) ? origin : undefined
+    },
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    exposeHeaders: ['Content-Length'],
+    maxAge: 600,
+  }),
+)
 
 // Apply authentication middleware to all protected route routers
 items.use(authMiddleware);
@@ -36,7 +60,7 @@ app.route('/api/categories', categories)
 app.route('/api/activities', activities)
 app.route('/api/laporan', laporan)
 
-const port = 5000
+const port = Number(process.env.PORT ?? 5000)
 console.log(`Server is running on port ${port}`)
 
 serve({
