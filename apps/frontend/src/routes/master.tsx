@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link as RouterLink, createFileRoute } from '@tanstack/react-router'
 import type { SubmitEventHandler } from 'react'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import {
@@ -196,11 +196,27 @@ export default function RouteComponent() {
             sx={{ p: { xs: 3, md: 4 }, borderRadius: 3 }}
           >
             <Box sx={{ mb: 3 }}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Package size={20} />
-                <Typography variant="h5" fontWeight={700}>
-                  Kelola Master Item
-                </Typography>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                justifyContent="space-between"
+              >
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Package size={20} />
+                  <Typography variant="h5" fontWeight={700}>
+                    Kelola Master Item
+                  </Typography>
+                </Stack>
+
+                <Button
+                  component={RouterLink}
+                  to="/master-kategori"
+                  variant="outlined"
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                >
+                  Tambah Kategori
+                </Button>
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 Tambah data alat dan pantau daftar item terdaftar.

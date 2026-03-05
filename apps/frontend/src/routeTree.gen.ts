@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnauthorizedRouteImport } from './routes/unauthorized'
 import { Route as TugasRouteImport } from './routes/tugas'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as MasterKategoriRouteImport } from './routes/master-kategori'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LaporanRouteImport } from './routes/laporan'
@@ -31,6 +32,11 @@ const TugasRoute = TugasRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterKategoriRoute = MasterKategoriRouteImport.update({
+  id: '/master-kategori',
+  path: '/master-kategori',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MasterRoute = MasterRouteImport.update({
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/laporan': typeof LaporanRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRoute
+  '/master-kategori': typeof MasterKategoriRoute
   '/signup': typeof SignupRoute
   '/tugas': typeof TugasRoute
   '/unauthorized': typeof UnauthorizedRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/laporan': typeof LaporanRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRoute
+  '/master-kategori': typeof MasterKategoriRoute
   '/signup': typeof SignupRoute
   '/tugas': typeof TugasRoute
   '/unauthorized': typeof UnauthorizedRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/laporan': typeof LaporanRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRoute
+  '/master-kategori': typeof MasterKategoriRoute
   '/signup': typeof SignupRoute
   '/tugas': typeof TugasRoute
   '/unauthorized': typeof UnauthorizedRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/laporan'
     | '/login'
     | '/master'
+    | '/master-kategori'
     | '/signup'
     | '/tugas'
     | '/unauthorized'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/laporan'
     | '/login'
     | '/master'
+    | '/master-kategori'
     | '/signup'
     | '/tugas'
     | '/unauthorized'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/laporan'
     | '/login'
     | '/master'
+    | '/master-kategori'
     | '/signup'
     | '/tugas'
     | '/unauthorized'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   LaporanRoute: typeof LaporanRoute
   LoginRoute: typeof LoginRoute
   MasterRoute: typeof MasterRoute
+  MasterKategoriRoute: typeof MasterKategoriRoute
   SignupRoute: typeof SignupRoute
   TugasRoute: typeof TugasRoute
   UnauthorizedRoute: typeof UnauthorizedRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master-kategori': {
+      id: '/master-kategori'
+      path: '/master-kategori'
+      fullPath: '/master-kategori'
+      preLoaderRoute: typeof MasterKategoriRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/master': {
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   LaporanRoute: LaporanRoute,
   LoginRoute: LoginRoute,
   MasterRoute: MasterRoute,
+  MasterKategoriRoute: MasterKategoriRoute,
   SignupRoute: SignupRoute,
   TugasRoute: TugasRoute,
   UnauthorizedRoute: UnauthorizedRoute,

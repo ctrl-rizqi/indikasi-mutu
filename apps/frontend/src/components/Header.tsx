@@ -56,6 +56,7 @@ export default function Header() {
     ...(user?.role === 'ADMIN'
       ? [
           { label: 'Master Item', to: '/master' as const },
+          { label: 'Tambah Kategori', to: '/master-kategori' as const },
           { label: 'Laporan', to: '/laporan' as const },
         ]
       : []),
