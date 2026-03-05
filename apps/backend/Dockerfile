@@ -23,9 +23,11 @@ COPY . .
 # Install ALL dependencies
 RUN pnpm install --frozen-lockfile --aggregate-output
 
-# Generate Prisma client & Build
+# Generate Prisma client (into src/generated/prisma as per schema.prisma)
 WORKDIR /usr/src/app/apps/backend
 RUN pnpm db:generate
+
+# Build the backend
 RUN pnpm run build
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
@@ -42,20 +44,21 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY packages/resource/package.json ./packages/resource/
 COPY apps/backend/package.json ./apps/backend/
 
-# Copy built code
+# Install only production dependencies
+RUN pnpm install --prod --frozen-lockfile --aggregate-output
+
+# Copy built code and generated prisma client
 COPY --from=build /usr/src/app/packages/resource ./packages/resource
 COPY --from=build /usr/src/app/apps/backend/dist ./apps/backend/dist
+COPY --from=build /usr/src/app/apps/backend/src/generated ./apps/backend/src/generated
 COPY --from=build /usr/src/app/apps/backend/prisma ./apps/backend/prisma
 COPY --from=build /usr/src/app/apps/backend/prisma.config.ts ./apps/backend/
-
-# Install only production dependencies
-# This handles the workspace packages correctly without broken symlinks
-RUN pnpm install --prod --frozen-lockfile --aggregate-output
 
 # Work inside the backend folder for CMD
 WORKDIR /usr/src/app/apps/backend
 
 EXPOSE 5000
 
-# Using npx to ensure we find the prisma binary in the pruned node_modules
+# Using npx to ensure we find the prisma binary for push
+# The custom generated client is already in src/generated/prisma, used by dist
 CMD ["sh", "-c", "npx prisma db push --config prisma.config.ts && node dist/index.js"]
