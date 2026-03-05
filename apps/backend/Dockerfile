@@ -29,7 +29,7 @@ RUN pnpm install --frozen-lockfile --aggregate-output
 COPY packages/resource ./packages/resource
 COPY apps/backend ./apps/backend
 
-# Generate Prisma client
+# Generate Prisma client (into src/generated/prisma as per schema.prisma)
 WORKDIR /usr/src/app/apps/backend
 RUN pnpm db:generate
 
@@ -50,8 +50,10 @@ WORKDIR /usr/src/app/apps/backend
 
 # Copy pruned dependencies and build results
 COPY --from=build /usr/src/app/pruned ./
+COPY --from=build /usr/src/app/apps/backend/dist ./dist
 COPY --from=build /usr/src/app/apps/backend/prisma ./prisma
 COPY --from=build /usr/src/app/apps/backend/src/generated ./src/generated
+COPY --from=build /usr/src/app/apps/backend/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /usr/src/app/apps/backend/prisma.config.ts ./
 
 EXPOSE 5000
