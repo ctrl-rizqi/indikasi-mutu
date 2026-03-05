@@ -17,27 +17,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /usr/src/app
 
-# Copy workspace manifest files for better Docker layer caching
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY packages/resource/package.json ./packages/resource/
-COPY apps/backend/package.json ./apps/backend/
+# Copy ALL workspace files for building
+COPY . .
 
-# Install dependencies with memory-efficient flags
+# Install ALL dependencies
 RUN pnpm install --frozen-lockfile --aggregate-output
 
-# Copy source code and Prisma schema
-COPY packages/resource ./packages/resource
-COPY apps/backend ./apps/backend
-
-# Generate Prisma client (into src/generated/prisma as per schema.prisma)
+# Generate Prisma client & Build
 WORKDIR /usr/src/app/apps/backend
 RUN pnpm db:generate
-
-# Build the backend
 RUN pnpm run build
-
-# Prune dependencies for production
-RUN pnpm --filter @repo/backend --prod deploy --legacy /usr/src/app/pruned
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM node:20-slim AS runtime
@@ -46,15 +35,25 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
 
-WORKDIR /usr/src/app/apps/backend
+WORKDIR /usr/src/app
 
-# Copy pruned dependencies and build results
-COPY --from=build /usr/src/app/pruned ./
-COPY --from=build /usr/src/app/apps/backend/dist ./dist
-COPY --from=build /usr/src/app/apps/backend/prisma ./prisma
-COPY --from=build /usr/src/app/apps/backend/src/generated ./src/generated
-COPY --from=build /usr/src/app/apps/backend/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /usr/src/app/apps/backend/prisma.config.ts ./
+# Copy workspace manifest files
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY packages/resource/package.json ./packages/resource/
+COPY apps/backend/package.json ./apps/backend/
+
+# Copy built code
+COPY --from=build /usr/src/app/packages/resource ./packages/resource
+COPY --from=build /usr/src/app/apps/backend/dist ./apps/backend/dist
+COPY --from=build /usr/src/app/apps/backend/prisma ./apps/backend/prisma
+COPY --from=build /usr/src/app/apps/backend/prisma.config.ts ./apps/backend/
+
+# Install only production dependencies
+# This handles the workspace packages correctly without broken symlinks
+RUN pnpm install --prod --frozen-lockfile --aggregate-output
+
+# Work inside the backend folder for CMD
+WORKDIR /usr/src/app/apps/backend
 
 EXPOSE 5000
 
