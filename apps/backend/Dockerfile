@@ -1,9 +1,13 @@
-FROM node:20-slim AS base
+# ─── Stage 1: Build ───────────────────────────────────────────────────────────
+FROM node:20-slim AS build
+
+# Set environment variables for pnpm
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
 
-FROM base AS build
+# Enable corepack and prepare specific pnpm version to match your server (10.30.3)
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+
 # Install build tools for native modules like bcrypt
 RUN apt-get update && apt-get install -y \
     python3 \
@@ -11,22 +15,44 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /usr/src/app
 WORKDIR /usr/src/app
-RUN pnpm install --frozen-lockfile
+
+# Copy workspace manifest files for better Docker layer caching
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY packages/resource/package.json ./packages/resource/
+COPY apps/backend/package.json ./apps/backend/
+
+# Install dependencies with memory-efficient flags
+RUN pnpm install --frozen-lockfile --aggregate-output
+
+# Copy source code and Prisma schema
+COPY packages/resource ./packages/resource
+COPY apps/backend ./apps/backend
 
 # Generate Prisma client
 WORKDIR /usr/src/app/apps/backend
 RUN pnpm db:generate
 
-# Build the backend and its workspace dependencies
-WORKDIR /usr/src/app
-RUN pnpm --filter @repo/backend run build
+# Build the backend
+RUN pnpm run build
 
-RUN pnpm --filter @repo/backend deploy --legacy /usr/src/app/pruned
+# Prune dependencies for production
+RUN pnpm --filter @repo/backend --prod deploy --legacy /usr/src/app/pruned
 
-FROM base AS runtime
+# ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
+FROM node:20-slim AS runtime
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+
 WORKDIR /usr/src/app/apps/backend
+
+# Copy pruned dependencies and build results
 COPY --from=build /usr/src/app/pruned ./
+COPY --from=build /usr/src/app/apps/backend/prisma ./prisma
+COPY --from=build /usr/src/app/apps/backend/src/generated ./src/generated
+
 EXPOSE 5000
-CMD ["sh", "-c", "pnpm db:generate && pnpm db:push && pnpm start"]
+
+CMD ["sh", "-c", "pnpm db:push && node dist/index.js"]

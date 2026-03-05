@@ -5,8 +5,8 @@ FROM node:20-slim AS build
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-# Enable pnpm
-RUN corepack enable
+# Enable corepack and prepare specific pnpm version to match your server (10.30.3)
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
 
 WORKDIR /usr/src/app
 
@@ -15,8 +15,8 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY packages/resource/package.json ./packages/resource/
 COPY apps/frontend/package.json ./apps/frontend/
 
-# Install dependencies (including devDependencies for the build step)
-RUN pnpm install --frozen-lockfile
+# Install dependencies with memory-efficient flags
+RUN pnpm install --frozen-lockfile --aggregate-output
 
 # Copy the source code
 COPY packages/resource ./packages/resource
