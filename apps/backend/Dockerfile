@@ -36,6 +36,7 @@ FROM node:20-slim AS runtime
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
@@ -50,7 +51,7 @@ RUN pnpm install --prod --frozen-lockfile --aggregate-output
 # Copy built code and generated prisma client
 COPY --from=build /usr/src/app/packages/resource ./packages/resource
 COPY --from=build /usr/src/app/apps/backend/dist ./apps/backend/dist
-COPY --from=build /usr/src/app/apps/backend/src/generated ./apps/backend/src/generated
+COPY --from=build /usr/src/app/apps/backend/src/generated ./apps/backend/dist/generated
 COPY --from=build /usr/src/app/apps/backend/prisma ./apps/backend/prisma
 COPY --from=build /usr/src/app/apps/backend/prisma.config.ts ./apps/backend/
 
@@ -60,5 +61,4 @@ WORKDIR /usr/src/app/apps/backend
 EXPOSE 5000
 
 # Using npx to ensure we find the prisma binary for push
-# The custom generated client is already in src/generated/prisma, used by dist
 CMD ["sh", "-c", "npx prisma db push --config prisma.config.ts && node dist/index.js"]

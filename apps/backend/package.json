@@ -14,6 +14,7 @@
     "@hono/node-server": "^1.19.9",
     "@prisma/adapter-mariadb": "^7.4.1",
     "@prisma/client": "^7.4.1",
+    "@prisma/client-runtime-utils": "^7.4.1",
     "@repo/resource": "workspace:*",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.3.1",
