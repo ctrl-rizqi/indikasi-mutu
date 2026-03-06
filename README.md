@@ -32,6 +32,8 @@ cp .env.example .env.local
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `AUTH_SECRET`
+- `AUTH_URL`
 - `DATABASE_URL` (pooler, runtime)
 - `DIRECT_URL` (direct connection, migrations)
 
@@ -42,6 +44,11 @@ pnpm db:generate
 pnpm db:migrate
 pnpm db:studio
 ```
+
+After `pnpm db:migrate`, default seeded accounts:
+
+- `admin` / `admin123`
+- `teknisi` / `teknisi123`
 
 Initialized files:
 
