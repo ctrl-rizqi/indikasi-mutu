@@ -33,6 +33,13 @@ export default async function DashboardPage({
       <section className="rounded-xl border bg-card p-5">
         <h2 className="text-base font-semibold">Akses Berdasarkan Role</h2>
         <ul className="mt-3 space-y-2 text-sm">
+          {session.user.role === "admin" ? (
+            <li>
+              <Link href="/dashboard/users" className="text-primary underline-offset-2 hover:underline">
+                Manajemen User
+              </Link>
+            </li>
+          ) : null}
           <li>
             <Link href="/dashboard/admin" className="text-primary underline-offset-2 hover:underline">
               Halaman Admin

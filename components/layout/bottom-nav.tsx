@@ -29,6 +29,11 @@ export function BottomNav() {
 
   if (role === "admin") {
     items.push({
+      label: "Users",
+      icon: UserCircle,
+      href: "/dashboard/users",
+    })
+    items.push({
       label: "Admin",
       icon: ShieldCheck,
       href: "/dashboard/admin",
