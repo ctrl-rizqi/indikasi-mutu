@@ -26,6 +26,14 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 })
 
+export const items = pgTable("items", {
+  id: serial("id").primaryKey(),
+  nama: varchar("nama", { length: 255 }).notNull(),
+  deskripsi: text("deskripsi").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
 export const usersRelations = relations(users, ({ one }) => ({
   role: one(roles, {
     fields: [users.roleId],
@@ -39,3 +47,4 @@ export const rolesRelations = relations(roles, ({ many }) => ({
 
 export type Role = typeof roles.$inferSelect
 export type User = typeof users.$inferSelect
+export type Item = typeof items.$inferSelect

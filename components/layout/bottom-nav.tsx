@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
-import { Home, LayoutDashboard, Settings, UserCircle, LogOut, ShieldCheck } from "lucide-react"
+import { Home, LayoutDashboard, Settings, UserCircle, LogOut, ShieldCheck, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function BottomNav() {
@@ -28,6 +28,11 @@ export function BottomNav() {
   ]
 
   if (role === "admin") {
+    items.push({
+      label: "Items",
+      icon: Package,
+      href: "/dashboard/items",
+    })
     items.push({
       label: "Users",
       icon: UserCircle,

@@ -34,11 +34,18 @@ export default async function DashboardPage({
         <h2 className="text-base font-semibold">Akses Berdasarkan Role</h2>
         <ul className="mt-3 space-y-2 text-sm">
           {session.user.role === "admin" ? (
-            <li>
-              <Link href="/dashboard/users" className="text-primary underline-offset-2 hover:underline">
-                Manajemen User
-              </Link>
-            </li>
+            <>
+              <li>
+                <Link href="/dashboard/users" className="text-primary underline-offset-2 hover:underline">
+                  Manajemen User
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/items" className="text-primary underline-offset-2 hover:underline">
+                  Manajemen Item
+                </Link>
+              </li>
+            </>
           ) : null}
           <li>
             <Link href="/dashboard/admin" className="text-primary underline-offset-2 hover:underline">

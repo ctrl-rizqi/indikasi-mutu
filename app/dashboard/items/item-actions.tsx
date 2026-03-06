@@ -21,21 +21,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { updateUser, deleteUser } from "@/app/dashboard/users/actions"
+import { updateItem, deleteItem } from "@/app/dashboard/items/actions"
 
-interface UserActionsProps {
-  user: {
+interface ItemActionsProps {
+  item: {
     id: number
-    name: string
-    username: string
-    roleId: number
-    roleName: string
+    nama: string
+    deskripsi: string
   }
-  roleList: { id: number; name: string }[]
-  isCurrentUser: boolean
 }
 
-export function UserActions({ user, roleList, isCurrentUser }: UserActionsProps) {
+export function ItemActions({ item }: ItemActionsProps) {
   const [openEdit, setOpenEdit] = React.useState(false)
   const [openDelete, setOpenDelete] = React.useState(false)
 
@@ -54,16 +50,15 @@ export function UserActions({ user, roleList, isCurrentUser }: UserActionsProps)
           
           <DropdownMenuItem onSelect={() => setOpenEdit(true)}>
             <Pencil className="mr-2 size-4" />
-            Edit Data
+            Edit Item
           </DropdownMenuItem>
 
           <DropdownMenuItem
             onSelect={() => setOpenDelete(true)}
             className="text-destructive focus:text-destructive"
-            disabled={isCurrentUser}
           >
             <Trash2 className="mr-2 size-4" />
-            Hapus User
+            Hapus Item
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -72,68 +67,41 @@ export function UserActions({ user, roleList, isCurrentUser }: UserActionsProps)
       <Dialog open={openEdit} onOpenChange={setOpenEdit}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit User: {user.name}</DialogTitle>
+            <DialogTitle>Edit Item</DialogTitle>
             <DialogDescription>
-              Perbarui informasi pengguna atau ganti hak akses.
+              Perbarui informasi item di bawah ini.
             </DialogDescription>
           </DialogHeader>
           <form action={async (formData) => {
-            await updateUser(formData)
+            await updateItem(formData)
             setOpenEdit(false)
           }}>
-            <input type="hidden" name="id" value={user.id} />
+            <input type="hidden" name="id" value={item.id} />
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor={`edit-name-${user.id}`}>Nama Lengkap</Label>
+                <Label htmlFor={`edit-nama-${item.id}`}>Nama Item</Label>
                 <Input
-                  id={`edit-name-${user.id}`}
-                  name="name"
-                  defaultValue={user.name}
+                  id={`edit-nama-${item.id}`}
+                  name="nama"
+                  defaultValue={item.nama}
                   required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor={`edit-username-${user.id}`}>Username</Label>
-                <Input
-                  id={`edit-username-${user.id}`}
-                  name="username"
-                  defaultValue={user.username}
+                <Label htmlFor={`edit-deskripsi-${item.id}`}>Deskripsi</Label>
+                <textarea
+                  id={`edit-deskripsi-${item.id}`}
+                  name="deskripsi"
+                  defaultValue={item.deskripsi}
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  rows={3}
                   required
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor={`edit-password-${user.id}`}>
-                  Password Baru
-                </Label>
-                <Input
-                  id={`edit-password-${user.id}`}
-                  name="password"
-                  type="password"
-                  placeholder="Kosongkan jika tidak ganti"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor={`edit-roleId-${user.id}`}>
-                  Role / Hak Akses
-                </Label>
-                <select
-                  id={`edit-roleId-${user.id}`}
-                  name="roleId"
-                  defaultValue={user.roleId}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                >
-                  {roleList.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.name}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
             <DialogFooter>
               <Button type="submit" className="w-full">
-                Update Data
+                Simpan Perubahan
               </Button>
             </DialogFooter>
           </form>
@@ -146,17 +114,17 @@ export function UserActions({ user, roleList, isCurrentUser }: UserActionsProps)
           <DialogHeader>
             <DialogTitle>Konfirmasi Hapus</DialogTitle>
             <DialogDescription>
-              Apakah Anda yakin ingin menghapus user{" "}
-              <span className="font-bold">{user.name}</span>? Tindakan ini tidak
+              Apakah Anda yakin ingin menghapus item{" "}
+              <span className="font-bold">{item.nama}</span>? Tindakan ini tidak
               dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <form action={async (formData) => {
-              await deleteUser(formData)
+              await deleteItem(formData)
               setOpenDelete(false)
             }} className="w-full flex gap-2">
-              <input type="hidden" name="id" value={user.id} />
+              <input type="hidden" name="id" value={item.id} />
               <Button
                 type="button"
                 variant="outline"
