@@ -34,43 +34,65 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 rounded-xl border bg-card p-6 shadow-sm">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold">Login</h1>
-        <p className="text-sm text-muted-foreground">Masuk untuk mengakses dashboard.</p>
+    <div className="w-full rounded-xl border bg-card text-card-foreground shadow-sm">
+      <div className="flex flex-col space-y-1.5 p-6">
+        <h3 className="text-2xl font-bold leading-none tracking-tight">Login</h3>
+        <p className="text-sm text-muted-foreground">
+          Masuk untuk mengakses dashboard sistem indikator mutu.
+        </p>
       </div>
-
-      <label className="block space-y-2">
-        <span className="text-sm font-medium">Username</span>
-        <input
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          type="text"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          required
-        />
-      </label>
-
-      <label className="block space-y-2">
-        <span className="text-sm font-medium">Password</span>
-        <input
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
-      </label>
-
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-      <button
-        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-        type="submit"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "Memproses..." : "Masuk"}
-      </button>
-    </form>
+      <form onSubmit={onSubmit}>
+        <div className="space-y-4 p-6 pt-0">
+          <div className="space-y-2">
+            <label
+              htmlFor="username"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Username
+            </label>
+            <input
+              id="username"
+              type="text"
+              placeholder="Masukkan username"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label
+              htmlFor="password"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {error && (
+            <div className="text-sm font-medium text-destructive">
+              {error}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center p-6 pt-0">
+          <button
+            type="submit"
+            className="inline-flex h-9 w-full items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Memproses..." : "Masuk"}
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }
