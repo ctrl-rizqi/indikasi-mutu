@@ -4,8 +4,13 @@ import { Activity } from "lucide-react"
 import { auth } from "@/auth"
 import { LoginForm } from "@/components/auth/login-form"
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ signup?: string }>
+}) {
   const session = await auth()
+  const params = await searchParams
 
   if (session?.user) {
     redirect("/dashboard")
@@ -20,6 +25,13 @@ export default async function LoginPage() {
           </div>
           Indikator Mutu RS
         </div>
+        
+        {params.signup === "success" && (
+          <div className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
+            Pendaftaran berhasil! Silakan login dengan akun baru Anda.
+          </div>
+        )}
+        
         <LoginForm />
       </div>
     </div>

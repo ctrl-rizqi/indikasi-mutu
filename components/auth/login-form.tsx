@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export function LoginForm() {
   const router = useRouter()
@@ -83,7 +84,7 @@ export function LoginForm() {
             </div>
           )}
         </div>
-        <div className="flex items-center p-6 pt-0">
+        <div className="flex items-center p-6 pt-0 flex-col space-y-4">
           <button
             type="submit"
             className="inline-flex h-9 w-full items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
@@ -91,6 +92,13 @@ export function LoginForm() {
           >
             {isSubmitting ? "Memproses..." : "Masuk"}
           </button>
+          
+          <div className="text-center text-sm text-muted-foreground">
+            Belum punya akun?{" "}
+            <Link href="/signup" className="font-medium text-primary underline-offset-4 hover:underline">
+              Daftar di sini
+            </Link>
+          </div>
         </div>
       </form>
     </div>

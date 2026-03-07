@@ -22,7 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { items, type Item } from "@/lib/db/schema"
+import { type Item } from "@/lib/db/schema"
 import { updateItem, deleteItem } from "@/app/dashboard/items/actions"
 
 interface ItemActionsProps {
