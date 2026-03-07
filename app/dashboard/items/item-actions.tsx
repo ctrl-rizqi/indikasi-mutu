@@ -5,6 +5,7 @@ import { Pencil, Trash2, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -21,14 +22,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { items, type Item } from "@/lib/db/schema"
 import { updateItem, deleteItem } from "@/app/dashboard/items/actions"
 
 interface ItemActionsProps {
-  item: {
-    id: number
-    nama: string
-    deskripsi: string
-  }
+  item: Item
 }
 
 export function ItemActions({ item }: ItemActionsProps) {
@@ -89,11 +87,10 @@ export function ItemActions({ item }: ItemActionsProps) {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor={`edit-deskripsi-${item.id}`}>Deskripsi</Label>
-                <textarea
+                <Textarea
                   id={`edit-deskripsi-${item.id}`}
                   name="deskripsi"
                   defaultValue={item.deskripsi}
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   rows={3}
                   required
                 />

@@ -1,12 +1,5 @@
 import { relations } from "drizzle-orm"
-import {
-  integer,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core"
+import { boolean, integer, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core"
 
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
@@ -34,17 +27,49 @@ export const items = pgTable("items", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 })
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const activities = pgTable("activities", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  itemId: integer("item_id")
+    .notNull()
+    .references(() => items.id, { onDelete: "restrict" }),
+  check1: boolean("check_1").notNull().default(false),
+  check2: boolean("check_2").notNull().default(false),
+  keterangan: text("keterangan"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, {
     fields: [users.roleId],
     references: [roles.id],
   }),
+  activities: many(activities),
 }))
 
 export const rolesRelations = relations(roles, ({ many }) => ({
   users: many(users),
 }))
 
+export const itemsRelations = relations(items, ({ many }) => ({
+  activities: many(activities),
+}))
+
+export const activitiesRelations = relations(activities, ({ one }) => ({
+  user: one(users, {
+    fields: [activities.userId],
+    references: [users.id],
+  }),
+  item: one(items, {
+    fields: [activities.itemId],
+    references: [items.id],
+  }),
+}))
+
 export type Role = typeof roles.$inferSelect
 export type User = typeof users.$inferSelect
 export type Item = typeof items.$inferSelect
+export type Activity = typeof activities.$inferSelect

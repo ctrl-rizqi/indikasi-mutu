@@ -5,10 +5,11 @@ import { Plus, ArrowLeft } from "lucide-react"
 import { createItem } from "@/app/dashboard/items/actions"
 import { requireRole } from "@/lib/auth/guards"
 import { db } from "@/lib/db"
-import { items } from "@/lib/db/schema"
+import { items, type Item } from "@/lib/db/schema"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Table,
   TableBody,
@@ -38,7 +39,7 @@ import { ItemActions } from "./item-actions"
 export default async function ItemsPage() {
   await requireRole(["admin"])
 
-  let itemList: Array<{ id: number; nama: string; deskripsi: string }> = []
+  let itemList: Item[] = []
   let migrationHint = ""
 
   try {
@@ -47,6 +48,8 @@ export default async function ItemsPage() {
         id: items.id,
         nama: items.nama,
         deskripsi: items.deskripsi,
+        createdAt: items.createdAt,
+        updatedAt: items.updatedAt,
       })
       .from(items)
       .orderBy(asc(items.id))
@@ -108,11 +111,10 @@ export default async function ItemsPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="deskripsi">Deskripsi</Label>
-                    <textarea
+                    <Textarea
                       id="deskripsi"
                       name="deskripsi"
                       placeholder="Ketikkan deskripsi item di sini..."
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       rows={3}
                       required
                     />
