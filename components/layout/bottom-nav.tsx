@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
-import { Home, LayoutDashboard, Settings, UserCircle, LogOut, ShieldCheck, Package } from "lucide-react"
+import { Home, LayoutDashboard, Settings, UserCircle, LogOut, ShieldCheck, Package, FilePieChart } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function BottomNav() {
@@ -32,6 +32,11 @@ export function BottomNav() {
       label: "Items",
       icon: Package,
       href: "/dashboard/items",
+    })
+    items.push({
+      label: "Laporan",
+      icon: FilePieChart,
+      href: "/dashboard/reports",
     })
     items.push({
       label: "Users",

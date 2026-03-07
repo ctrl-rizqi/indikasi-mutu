@@ -45,6 +45,11 @@ export default async function DashboardPage({
                   Manajemen Item
                 </Link>
               </li>
+              <li>
+                <Link href="/dashboard/reports" className="text-primary underline-offset-2 hover:underline">
+                  Laporan Capaian
+                </Link>
+              </li>
             </>
           ) : null}
           <li>

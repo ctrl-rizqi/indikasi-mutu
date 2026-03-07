@@ -12,7 +12,7 @@ function getString(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : ""
 }
 
-export async function signup(prevState: any, formData: FormData) {
+export async function signup(prevState: unknown, formData: FormData) {
   const name = getString(formData, "name")
   const username = getString(formData, "username")
   const password = getString(formData, "password")

@@ -19,13 +19,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -34,6 +27,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { PageHeader } from "@/components/dashboard/page-header"
+import { DataTableShell } from "@/components/dashboard/data-table-shell"
 import { ItemActions } from "./item-actions"
 
 export default async function ItemsPage() {
@@ -69,118 +64,108 @@ export default async function ItemsPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-6 py-10">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manajemen Item</h1>
-          <p className="text-muted-foreground">
-            Kelola daftar item yang tersedia dalam sistem.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild size="sm">
-            <Link href="/dashboard">
-              <ArrowLeft className="mr-2 size-4" />
-              Kembali
-            </Link>
-          </Button>
+      <PageHeader 
+        title="Manajemen Item" 
+        description="Kelola daftar item yang tersedia dalam sistem."
+      >
+        <Button variant="outline" asChild size="sm">
+          <Link href="/dashboard">
+            <ArrowLeft className="mr-2 size-4" />
+            Kembali
+          </Link>
+        </Button>
 
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="mr-2 size-4" />
-                Tambah Item
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Tambah Item Baru</DialogTitle>
-                <DialogDescription>
-                  Lengkapi data di bawah ini untuk menambahkan item baru.
-                </DialogDescription>
-              </DialogHeader>
-              <form action={createItem}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="nama">Nama Item</Label>
-                    <Input
-                      id="nama"
-                      name="nama"
-                      placeholder="Contoh: Item A"
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="deskripsi">Deskripsi</Label>
-                    <Textarea
-                      id="deskripsi"
-                      name="deskripsi"
-                      placeholder="Ketikkan deskripsi item di sini..."
-                      rows={3}
-                      required
-                    />
-                  </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <Plus className="mr-2 size-4" />
+              Tambah Item
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Tambah Item Baru</DialogTitle>
+              <DialogDescription>
+                Lengkapi data di bawah ini untuk menambahkan item baru.
+              </DialogDescription>
+            </DialogHeader>
+            <form action={createItem}>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="nama">Nama Item</Label>
+                  <Input
+                    id="nama"
+                    name="nama"
+                    placeholder="Contoh: Item A"
+                    required
+                  />
                 </div>
-                <DialogFooter>
-                  <Button type="submit" className="w-full">
-                    Simpan Item
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="deskripsi">Deskripsi</Label>
+                  <Textarea
+                    id="deskripsi"
+                    name="deskripsi"
+                    placeholder="Ketikkan deskripsi item di sini..."
+                    rows={3}
+                    required
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full">
+                  Simpan Item
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </PageHeader>
 
-      <Card>
-        <CardHeader className="px-6">
-          <CardTitle>Daftar Item</CardTitle>
-          <CardDescription>
-            Terdapat {itemList.length} item yang terdaftar dalam sistem.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {migrationHint ? (
-            <div className="mx-6 mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-              {migrationHint}
-            </div>
-          ) : null}
+      <DataTableShell 
+        title="Daftar Item" 
+        description={`Terdapat ${itemList.length} item yang terdaftar dalam sistem.`}
+      >
+        {migrationHint ? (
+          <div className="mx-6 mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            {migrationHint}
+          </div>
+        ) : null}
 
-          <Table>
-            <TableHeader>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20 pl-6">ID</TableHead>
+              <TableHead>Nama Item</TableHead>
+              <TableHead>Deskripsi</TableHead>
+              <TableHead className="text-right pr-6">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {itemList.length === 0 ? (
               <TableRow>
-                <TableHead className="w-20 pl-6">ID</TableHead>
-                <TableHead>Nama Item</TableHead>
-                <TableHead>Deskripsi</TableHead>
-                <TableHead className="text-right pr-6">Aksi</TableHead>
+                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                  Belum ada data item.
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {itemList.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                    Belum ada data item.
+            ) : (
+              itemList.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-mono text-xs pl-6">
+                    #{item.id}
+                  </TableCell>
+                  <TableCell className="font-medium">{item.nama}</TableCell>
+                  <TableCell className="max-w-md truncate text-muted-foreground">
+                    {item.deskripsi}
+                  </TableCell>
+                  <TableCell className="text-right pr-6">
+                    <ItemActions item={item} />
                   </TableCell>
                 </TableRow>
-              ) : (
-                itemList.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-mono text-xs pl-6">
-                      #{item.id}
-                    </TableCell>
-                    <TableCell className="font-medium">{item.nama}</TableCell>
-                    <TableCell className="max-w-md truncate text-muted-foreground">
-                      {item.deskripsi}
-                    </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <ItemActions item={item} />
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </DataTableShell>
     </main>
   )
 }
